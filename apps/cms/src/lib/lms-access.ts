@@ -73,3 +73,47 @@ export const enforceTenantScope: CollectionBeforeChangeHook = ({ data, originalD
   if (isInstructor(u) && tenant && tenantIdsOf(u).includes(tenant)) return data
   throw new APIError('You can only change content in your own academies.', 403, undefined, true)
 }
+
+// --- Learners ---------------------------------------------------------------
+
+export type LearnerUser = { id: string; collection: 'learners'; name?: string; email?: string }
+export const asLearner = (user: unknown): LearnerUser | undefined => {
+  const u = user as { id?: unknown; collection?: unknown } | null | undefined
+  return u && u.collection === 'learners' && typeof u.id === 'string' ? (u as LearnerUser) : undefined
+}
+
+/** Records (enrolments, progress, attempts, certificates): admins, the academy's instructors, and the learner's own. */
+export const ownOrTenantStaff: Access = ({ req: { user } }) => {
+  const u = user as StaffUser
+  if (isAdminUser(u)) return true
+  if (isInstructor(u)) return { tenant: { in: tenantIdsOf(u) } }
+  const learner = asLearner(user)
+  if (learner) return { learner: { equals: learner.id } }
+  return false
+}
+
+/** The course ids a learner is enrolled in, fetched once per request. */
+export async function enrolledCourseIds(req: Parameters<FieldAccess>[0]['req']): Promise<Set<string>> {
+  const learner = asLearner(req.user)
+  if (!learner) return new Set()
+  const ctx = req.context as { lmsEnrolledCourses?: Promise<Set<string>> }
+  ctx.lmsEnrolledCourses ??= req.payload
+    .find({
+      collection: 'enrolments',
+      where: { learner: { equals: learner.id } },
+      depth: 0,
+      pagination: false,
+      overrideAccess: true,
+      req,
+    })
+    .then((r) => new Set(r.docs.map((d) => idOf(d.course as Rel)).filter((id): id is string => Boolean(id))))
+  return ctx.lmsEnrolledCourses
+}
+
+/** Lesson bodies and quiz questions: the academy's staff, and learners enrolled in the course. */
+export const tenantStaffOrEnrolledField: FieldAccess = async (args) => {
+  if (tenantStaffField(args)) return true
+  if (!asLearner(args.req.user)) return false
+  const course = idOf((args.doc as { course?: Rel } | undefined)?.course)
+  return course !== undefined && (await enrolledCourseIds(args.req)).has(course)
+}

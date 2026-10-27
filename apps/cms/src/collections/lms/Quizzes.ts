@@ -1,6 +1,6 @@
 import type { CollectionConfig } from 'payload'
 
-import { canCreateInTenant, enforceTenantScope, publishedOrTenantStaff, tenantFromCourse, tenantStaff, tenantStaffField } from '../../lib/lms-access'
+import { canCreateInTenant, enforceTenantScope, publishedOrTenantStaff, tenantFromCourse, tenantStaff, tenantStaffField, tenantStaffOrEnrolledField } from '../../lib/lms-access'
 import { slugField } from '../../lib/slug'
 
 type Question = { options?: unknown[] | null; correctIndex?: number | null }
@@ -47,7 +47,8 @@ export const Quizzes: CollectionConfig = {
       type: 'array',
       required: true,
       minRows: 1,
-      access: { read: tenantStaffField },
+      // Prompts and options: staff, and learners enrolled in the course.
+      access: { read: tenantStaffOrEnrolledField },
       fields: [
         { name: 'prompt', type: 'text', required: true },
         { name: 'options', type: 'array', required: true, minRows: 2, fields: [{ name: 'label', type: 'text', required: true }] },

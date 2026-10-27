@@ -210,5 +210,14 @@ export const manifest: MigrationManifest = {
       description:
         "The sample academy (LMS2) — Demo Academy with one published course, Getting started: three lessons and a three-question quiz; hand-written, fixed ids, ON CONFLICT DO NOTHING",
     },
+    {
+      id: "310_lms_learner_records",
+      context: "cms",
+      path: "310_lms_learner_records/up.sql",
+      checksum:
+        "d020e392da6f1d5f3d0364fa76e1c3c560528c7c8fc37070596ec6be49cceac1",
+      description:
+        "LMS learner records (multi-tenant-saas-2-lms LMS3) — learners (auth) and their sessions, enrolments, lesson progress, quiz attempts and certificates, with unique (learner, course) enrolments and certificates, unique (learner, lesson) progress and unique serials; generated from apps/cms/payload-migrations",
+    },
   ],
 };

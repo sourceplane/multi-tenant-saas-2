@@ -1,11 +1,10 @@
 import type { CollectionConfig } from 'payload'
 
-import { canCreateInTenant, enforceTenantScope, publishedOrTenantStaff, tenantFromCourse, tenantStaff, tenantStaffField } from '../../lib/lms-access'
+import { canCreateInTenant, enforceTenantScope, publishedOrTenantStaff, tenantFromCourse, tenantStaff, tenantStaffOrEnrolledField } from '../../lib/lms-access'
 import { slugField } from '../../lib/slug'
 
 // A lesson is listed wherever its course is published; its body and video are
-// for the academy's staff here, and for enrolled learners once learner
-// records exist.
+// for the academy's staff and for learners enrolled in the course.
 export const Lessons: CollectionConfig = {
   slug: 'lessons',
   admin: { useAsTitle: 'title', defaultColumns: ['title', 'course', 'order', 'minutes'], group: 'Learning' },
@@ -32,7 +31,7 @@ export const Lessons: CollectionConfig = {
     { name: 'title', type: 'text', required: true },
     slugField('title', { unique: false }),
     { name: 'minutes', type: 'number', min: 1, admin: { position: 'sidebar' } },
-    { name: 'videoUrl', label: 'Video URL', type: 'text', access: { read: tenantStaffField } },
-    { name: 'content', type: 'richText', access: { read: tenantStaffField } },
+    { name: 'videoUrl', label: 'Video URL', type: 'text', access: { read: tenantStaffOrEnrolledField } },
+    { name: 'content', type: 'richText', access: { read: tenantStaffOrEnrolledField } },
   ],
 }
