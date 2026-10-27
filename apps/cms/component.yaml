@@ -106,9 +106,11 @@ spec:
     # Schema cms is migration 200 in packages/db, applied by db-migrate (an
     # enforced dependency above). The CMS never migrates itself.
     migrationCommand: "echo 'Schema cms is applied by db-migrate (migration 200_cms_payload_core).'"
-    # Live means: the database answers through HYPERDRIVE_CMS, and the admin
-    # panel renders. Retried with backoff by the composition.
-    smokeCommand: "curl -fsS --max-time 30 \"${CMS_URL:?}/health\" | grep -q '\"db\":\"ok\"' && test \"$(curl -s -o /dev/null -w '%{http_code}' --max-time 30 \"${CMS_URL}/admin\")\" = 200"
+    # Live means: the database answers through HYPERDRIVE_CMS, the admin
+    # panel renders, and the learner catalogue renders (its marker, not a
+    # course title: an admin may unpublish the sample). Retried with backoff
+    # by the composition.
+    smokeCommand: "curl -fsS --max-time 30 \"${CMS_URL:?}/health\" | grep -q '\"db\":\"ok\"' && test \"$(curl -s -o /dev/null -w '%{http_code}' --max-time 30 \"${CMS_URL}/admin\")\" = 200 && curl -fsS --max-time 30 \"${CMS_URL}/\" | grep -q 'data-page=\"catalogue\"'"
   labels:
     team: platform
     layer: runtime

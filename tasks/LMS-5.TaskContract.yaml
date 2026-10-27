@@ -1,0 +1,20 @@
+apiVersion: orun.io/v1
+kind: TaskContract
+metadata:
+  name: LMS-5
+  title: "LMS4: the learner app"
+spec:
+  goal: "A learner can browse the catalogue, register, enrol, take the lessons and the quiz, and get a printable, publicly verifiable certificate in the browser on stage and prod."
+  affects:
+    - "apps/cms/src/app/(learn)/**"
+    - "apps/cms/src/lms/**"
+    - "apps/cms/component.yaml"
+    - "apps/cms/docs/**"
+    - "tests/cms/src/**"
+    - "tasks/LMS-5.TaskContract.yaml"
+  doneWhen:
+    - "on stage and prod, / lists Getting started"
+    - "in a browser on stage, the whole path works: register, enrol, three lessons, quiz, certificate, /certificates/<serial>"
+  gates:
+    - "the local Playwright journey passes in Chromium (light, dark, phone width; no browser errors)"
+    - "the deploy smoke check asserts the catalogue renders"
