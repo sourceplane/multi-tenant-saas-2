@@ -1,0 +1,35 @@
+apiVersion: sourceplane.io/v1
+kind: Component
+metadata:
+  name: cms-tests
+  description: Verification suite for `cms` — the setup gate, access rules, request-scoped Postgres pool, rendered wrangler config and migration sync.
+spec:
+  docs:
+    overview: docs/overview.md
+    pages:
+      - { path: docs/architecture.md, role: architecture }
+      - { path: docs/runbook.md, role: runbook }
+  type: turbo-package
+  lifecycle: production
+  owner: platform
+  domain: starter-tests
+  path: tests/cms
+  # Runs when the suite itself changes. A change to apps/cms runs the same
+  # suite inside the cms lane (its buildCommand): dependsOn would only order
+  # this component, not mark it changed.
+  subscribe:
+    environments:
+      - name: dev
+        # verify, not quick-check: quick-check runs no build and no tests.
+        profile: verify
+  # The suite runs in the package's own `build` script. In stack-tectonic
+  # 0.20.0 turbo-package ignores preBuildCommand, buildCommand and
+  # typecheckCommand (each guard reads `.x` instead of `.parameters.x`) and
+  # always runs `turbo run build --filter=./`, so the build script is the one
+  # hook that runs.
+  parameters:
+    nodeVersion: "22"
+    pnpmVersion: "10.12.1"
+  labels:
+    team: platform
+    layer: test

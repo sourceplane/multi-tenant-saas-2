@@ -1,0 +1,24 @@
+apiVersion: orun.io/v1
+kind: TaskContract
+metadata:
+  name: LMS-2
+  title: "LMS1: the CMS layer, ported from lumen-payload"
+spec:
+  goal: "Payload CMS runs on stage and prod for multi-tenant-saas-2 exactly as lumen-payload-cms shipped it: its own cache-disabled Hyperdrive config, schema cms through db-migrate, and the closed-by-default admin."
+  affects:
+    - "infra/terraform/cloudflare-hyperdrive-cms/**"
+    - "packages/db/src/migrations/200_cms_payload_core/**"
+    - "packages/db/src/manifest.ts"
+    - "packages/db/src/types.ts"
+    - "tests/db/src/**"
+    - "apps/cms/**"
+    - "tests/cms/**"
+    - "pnpm-lock.yaml"
+    - "tasks/LMS-2.TaskContract.yaml"
+  doneWhen:
+    - "every lane of the PR is green"
+    - "after the merge, on stage and prod: /health answers ok, /admin answers 200, and an anonymous first-register answers 403"
+  gates:
+    - "pnpm --filter @saas/cms-tests build and pnpm --filter @saas/db-tests test pass"
+  needs:
+    - "the Cloudflare account on Workers Paid"

@@ -1,0 +1,62 @@
+apiVersion: sourceplane.io/v1
+kind: Component
+
+metadata:
+  name: cloudflare-hyperdrive-cms
+  description: The CMS's own Hyperdrive config per environment, with query caching disabled, and the CMS's generated Payload secret
+  labels:
+    domain: infra
+    scope: runtime-database-gateway
+
+spec:
+  docs:
+    overview: docs/overview.md
+    pages:
+      - { path: docs/architecture.md, role: architecture }
+      - { path: docs/runbook.md, role: runbook }
+  type: terraform
+  lifecycle: production
+  owner: platform
+  domain: infra
+
+  # Same Supabase origin as cloudflare-hyperdrive: it must run after the
+  # supabase component has published that origin to orun secrets.
+  dependsOn:
+    - component: supabase
+
+  parameters:
+    orgName: sourceplane
+    stackName: cloudflare-hyperdrive-cms
+    terraformDir: terraform
+    terraformVersion: "1.15.3"
+    # Lease-published after apply. apps/cms reads the wiring back as
+    # WIRING_CLOUDFLARE_HYPERDRIVE_CMS_<ENV> to render its binding, and the
+    # Payload secret as PAYLOAD_SECRET (secrets-live pushes it to the Worker).
+    # Nobody types either value, and neither is printed.
+    secretOutputs: "WIRING_CLOUDFLARE_HYPERDRIVE_CMS=wiring,CMS_PAYLOAD_SECRET=payload_secret"
+
+  # The same brokered credentials as cloudflare-hyperdrive: a per-run
+  # Hyperdrive-edit token and the account id, plus the Supabase origin the
+  # supabase component published.
+  secretEnv:
+    CLOUDFLARE_API_TOKEN: "secret://org_1116c98ad8b6459694e495746d1eca14/multi-tenant-saas-2/{{ .environment }}/CLOUDFLARE_HYPERDRIVE_TOKEN"
+    CLOUDFLARE_ACCOUNT_ID: "secret://org_1116c98ad8b6459694e495746d1eca14/multi-tenant-saas-2/{{ .environment }}/CLOUDFLARE_ACCOUNT_ID"
+    TF_VAR_cloudflare_account_id: "secret://org_1116c98ad8b6459694e495746d1eca14/multi-tenant-saas-2/{{ .environment }}/CLOUDFLARE_ACCOUNT_ID"
+    TF_VAR_supabase_project_ref: "secret://org_1116c98ad8b6459694e495746d1eca14/multi-tenant-saas-2/{{ .environment }}/SUPABASE_PROJECT_REF"
+    TF_VAR_supabase_db_password: "secret://org_1116c98ad8b6459694e495746d1eca14/multi-tenant-saas-2/{{ .environment }}/SUPABASE_DB_PASSWORD"
+
+  subscribe:
+    environments:
+      - name: stage
+        profile: plan-only
+        profileRules:
+          - profile: apply
+            when:
+              triggerRef: github-push-main
+
+      - name: prod
+        profile: plan-only
+        profileRules:
+          - profile: apply
+            when:
+              triggerRef: github-push-main

@@ -1,0 +1,7 @@
+.next/
+.open-next/
+.wrangler/
+next-env.d.ts
+wrangler.jsonc
+*.tsbuildinfo
+.dev.vars
