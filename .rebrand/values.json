@@ -1,0 +1,9 @@
+{
+  "reponame": "multi-tenant-saas-2",
+  "productname": "Multi Tenant Saas 2",
+  "productdomain": "",
+  "subdomain": "nexo-7be",
+  "orunWorkspace": "org_1116c98ad8b6459694e495746d1eca14",
+  "githuborg": "sourceplane",
+  "epicSlug": "infra-baselining-multi-tenant-saas-2"
+}
