@@ -1,0 +1,13 @@
+apiVersion: orun.io/v1
+kind: TaskContract
+metadata:
+  name: LMS-1
+  title: "LMS0: the multi-tenant-saas-2-lms doc set"
+spec:
+  goal: "The multi-tenant-saas-2-lms epic's design of record is on main: README, design, implementation plan, risks, and status."
+  affects:
+    - "specs/epics/multi-tenant-saas-2-lms/**"
+    - "tasks/**"
+  doneWhen:
+    - "specs/epics/multi-tenant-saas-2-lms/ holds README.md, design.md, implementation-plan.md, risks-and-open-questions.md and IMPLEMENTATION-STATUS.md on main"
+  gates: []
