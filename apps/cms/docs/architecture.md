@@ -48,7 +48,7 @@ browser ──► multi-tenant-saas-2-cms-<env> (Worker)
   own Cloudflare template ships with 3.89.0. `pg` and `pg-cloudflare` are
   direct dependencies and server externals: webpack would otherwise bundle
   pg-cloudflare's empty default export and Postgres connections fail in workerd.
-- **Workers Paid.** About 3.8 MiB compressed, and Payload's first request in an
+- **Workers Paid.** 3.3 MiB compressed (Free allows 3 MiB), and Payload's first request in an
   isolate needs far more than Free's 10 ms of CPU.
 
 ## Out of scope here
