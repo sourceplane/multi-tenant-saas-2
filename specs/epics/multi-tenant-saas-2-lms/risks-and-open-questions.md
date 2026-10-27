@@ -68,8 +68,9 @@ browser. Instructors testing as a learner use a second browser profile.
 
 ## LMS-I — Workers Paid is a prerequisite (RISK, owner action)
 
-Inherited from the CMS layer (`lumen-payload-cms` PC-H): the Worker is about
-3.8 MiB compressed and needs more than Workers Free's 10 ms of CPU. The
+Inherited from the CMS layer (`lumen-payload-cms` PC-H): the Worker is 3.3 MiB
+compressed in CI's dry-run deploy (Free allows 3 MiB) and needs more than
+Workers Free's 10 ms of CPU. The
 Cloudflare account this product shares with `lumen-payload` also hit Free's
 5-cron limit during the fleet bootstrap.
 
