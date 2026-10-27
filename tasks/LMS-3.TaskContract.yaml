@@ -1,0 +1,23 @@
+apiVersion: orun.io/v1
+kind: TaskContract
+metadata:
+  name: LMS-3
+  title: "LMS2: the course model (academies, courses, lessons, quizzes)"
+spec:
+  goal: "Academies, courses, lessons and quizzes exist with academy-scoped instructors and hidden answer keys, and the sample academy's course is readable on stage and prod."
+  affects:
+    - "apps/cms/src/**"
+    - "apps/cms/payload-migrations/**"
+    - "apps/cms/docs/**"
+    - "packages/db/src/migrations/300_lms_course_model/**"
+    - "packages/db/src/migrations/301_lms_sample_academy/**"
+    - "packages/db/src/manifest.ts"
+    - "tests/cms/src/**"
+    - "tests/db/src/**"
+    - "tasks/LMS-3.TaskContract.yaml"
+  doneWhen:
+    - "both migrations apply on stage and prod"
+    - "GET /api/courses?where[slug][equals]=getting-started returns the sample course anonymously, and GET /api/quizzes/<id> returns no question data"
+  gates:
+    - "migrations 200+300 yield exactly the schema Payload pushes for the configuration; 300 and 301 re-apply cleanly"
+    - "the local workerd run passes: anonymous catalogue, hidden bodies and answer keys (REST and GraphQL), per-academy slugs, instructor scoping, no self-escalation, concurrency"

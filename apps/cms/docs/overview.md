@@ -19,6 +19,23 @@ at `/api/<collection>` and GraphQL at `/api/graphql`, over Postgres schema
 Published pages, posts and categories are readable by anyone through the API.
 Drafts, accounts and everything else need a staff session.
 
+### Learning (multi-tenant-saas-2-lms)
+
+- **tenants** (academies): name, slug, description, open or closed enrolment.
+  Admins create them and assign instructors.
+- **courses**: per academy, with drafts and versions; the slug is unique within
+  its academy.
+- **lessons** and **quizzes**: per course, and in their course's academy (set
+  by the server, never by the request). A quiz has questions with options and
+  an answer key.
+- **users** gain the `instructor` role and `tenants`, the academies they manage.
+
+Anyone can read published courses and their lessons' and quizzes' titles.
+Lesson bodies, videos, quiz questions and answer keys are readable only by
+admins and the academy's own instructors. Instructors write only inside their
+academies; only admins delete courses or manage academies and accounts. The
+sample academy (migration 301) ships one published course, *Getting started*.
+
 ## Depends on
 
 - **cloudflare-hyperdrive-cms**: its database path (cache disabled) and its

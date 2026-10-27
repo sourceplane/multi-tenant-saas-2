@@ -6,6 +6,10 @@ import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import { buildConfig } from 'payload'
 
 import { Categories } from './collections/Categories'
+import { Courses } from './collections/lms/Courses'
+import { Lessons } from './collections/lms/Lessons'
+import { Quizzes } from './collections/lms/Quizzes'
+import { Tenants } from './collections/lms/Tenants'
 import { Pages } from './collections/Pages'
 import { Posts } from './collections/Posts'
 import { Users } from './collections/Users'
@@ -39,7 +43,7 @@ export default buildConfig({
     importMap: { baseDir: path.resolve(dirname) },
     meta: { titleSuffix: ' — CMS' },
   },
-  collections: [Users, Pages, Posts, Categories],
+  collections: [Users, Pages, Posts, Categories, Tenants, Courses, Lessons, Quizzes],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: { outputFile: path.resolve(dirname, 'payload-types.ts') },

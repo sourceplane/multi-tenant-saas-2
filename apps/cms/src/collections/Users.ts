@@ -50,9 +50,21 @@ export const Users: CollectionConfig = {
       saveToJWT: true,
       options: [
         { label: 'Admin', value: 'admin' },
-        { label: 'Editor', value: 'editor' },
+        { label: 'Editor (site pages and posts)', value: 'editor' },
+        { label: 'Instructor (courses in their academies)', value: 'instructor' },
       ],
       access: { create: isAdminField, update: isAdminField },
+    },
+    {
+      // The academies an instructor manages. Only admins assign them.
+      name: 'tenants',
+      label: 'Academies',
+      type: 'relationship',
+      relationTo: 'tenants',
+      hasMany: true,
+      saveToJWT: true,
+      access: { create: isAdminField, update: isAdminField },
+      admin: { condition: (data) => data?.role === 'instructor' },
     },
   ],
 }

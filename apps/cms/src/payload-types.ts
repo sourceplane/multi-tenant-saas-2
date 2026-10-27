@@ -71,6 +71,10 @@ export interface Config {
     pages: Page;
     posts: Post;
     categories: Category;
+    tenants: Tenant;
+    courses: Course;
+    lessons: Lesson;
+    quizzes: Quiz;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -82,6 +86,10 @@ export interface Config {
     pages: PagesSelect<false> | PagesSelect<true>;
     posts: PostsSelect<false> | PostsSelect<true>;
     categories: CategoriesSelect<false> | CategoriesSelect<true>;
+    tenants: TenantsSelect<false> | TenantsSelect<true>;
+    courses: CoursesSelect<false> | CoursesSelect<true>;
+    lessons: LessonsSelect<false> | LessonsSelect<true>;
+    quizzes: QuizzesSelect<false> | QuizzesSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -128,7 +136,8 @@ export interface UserAuthOperations {
 export interface User {
   id: string;
   name?: string | null;
-  role: 'admin' | 'editor';
+  role: 'admin' | 'editor' | 'instructor';
+  tenants?: (string | Tenant)[] | null;
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -147,6 +156,26 @@ export interface User {
     | null;
   password?: string | null;
   collection: 'users';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "tenants".
+ */
+export interface Tenant {
+  id: string;
+  name: string;
+  /**
+   * Derived from the name unless you set it.
+   */
+  slug: string;
+  description?: string | null;
+  enrolment: 'open' | 'closed';
+  /**
+   * Lumen organization id, for the operator. Optional.
+   */
+  lumenOrgId?: string | null;
+  updatedAt: string;
+  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -228,6 +257,95 @@ export interface Category {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "courses".
+ */
+export interface Course {
+  id: string;
+  tenant: string | Tenant;
+  title: string;
+  /**
+   * Derived from the title unless you set it.
+   */
+  slug: string;
+  summary?: string | null;
+  level?: ('beginner' | 'intermediate' | 'advanced') | null;
+  coverUrl?: string | null;
+  instructor?: (string | null) | User;
+  updatedAt: string;
+  createdAt: string;
+  _status?: ('draft' | 'published') | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "lessons".
+ */
+export interface Lesson {
+  id: string;
+  course: string | Course;
+  /**
+   * Set from the course's academy.
+   */
+  tenant?: (string | null) | Tenant;
+  order: number;
+  title: string;
+  /**
+   * Derived from the title unless you set it.
+   */
+  slug: string;
+  minutes?: number | null;
+  videoUrl?: string | null;
+  content?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "quizzes".
+ */
+export interface Quiz {
+  id: string;
+  course: string | Course;
+  /**
+   * Set from the course's academy.
+   */
+  tenant?: (string | null) | Tenant;
+  title: string;
+  /**
+   * Derived from the title unless you set it.
+   */
+  slug: string;
+  passingScore: number;
+  questions: {
+    prompt: string;
+    options: {
+      label: string;
+      id?: string | null;
+    }[];
+    /**
+     * Zero-based: 0 is the first option.
+     */
+    correctIndex: number;
+    id?: string | null;
+  }[];
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -265,6 +383,22 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'categories';
         value: string | Category;
+      } | null)
+    | ({
+        relationTo: 'tenants';
+        value: string | Tenant;
+      } | null)
+    | ({
+        relationTo: 'courses';
+        value: string | Course;
+      } | null)
+    | ({
+        relationTo: 'lessons';
+        value: string | Lesson;
+      } | null)
+    | ({
+        relationTo: 'quizzes';
+        value: string | Quiz;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -315,6 +449,7 @@ export interface PayloadMigration {
 export interface UsersSelect<T extends boolean = true> {
   name?: T;
   role?: T;
+  tenants?: T;
   updatedAt?: T;
   createdAt?: T;
   email?: T;
@@ -367,6 +502,77 @@ export interface PostsSelect<T extends boolean = true> {
 export interface CategoriesSelect<T extends boolean = true> {
   name?: T;
   slug?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "tenants_select".
+ */
+export interface TenantsSelect<T extends boolean = true> {
+  name?: T;
+  slug?: T;
+  description?: T;
+  enrolment?: T;
+  lumenOrgId?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "courses_select".
+ */
+export interface CoursesSelect<T extends boolean = true> {
+  tenant?: T;
+  title?: T;
+  slug?: T;
+  summary?: T;
+  level?: T;
+  coverUrl?: T;
+  instructor?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "lessons_select".
+ */
+export interface LessonsSelect<T extends boolean = true> {
+  course?: T;
+  tenant?: T;
+  order?: T;
+  title?: T;
+  slug?: T;
+  minutes?: T;
+  videoUrl?: T;
+  content?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "quizzes_select".
+ */
+export interface QuizzesSelect<T extends boolean = true> {
+  course?: T;
+  tenant?: T;
+  title?: T;
+  slug?: T;
+  passingScore?: T;
+  questions?:
+    | T
+    | {
+        prompt?: T;
+        options?:
+          | T
+          | {
+              label?: T;
+              id?: T;
+            };
+        correctIndex?: T;
+        id?: T;
+      };
   updatedAt?: T;
   createdAt?: T;
 }

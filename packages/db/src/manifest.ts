@@ -192,5 +192,23 @@ export const manifest: MigrationManifest = {
       description:
         "Payload CMS schema (the lumen-payload-cms layer, ported by multi-tenant-saas-2-lms LMS1) — schema cms with staff users and sessions, pages and posts with drafts and versions, categories, and Payload's lock, preference and migration tables; generated from apps/cms/payload-migrations by scripts/payload-migration-to-sql.mjs",
     },
+    {
+      id: "300_lms_course_model",
+      context: "cms",
+      path: "300_lms_course_model/up.sql",
+      checksum:
+        "b20596fac905fa94a4022792115e0af8da0ce34e52dcf742d7c843f1f8922c7d",
+      description:
+        "LMS course model (multi-tenant-saas-2-lms LMS2) — academies (tenants), courses with drafts and versions, lessons, quizzes with questions and options, the instructor role and users' academies; generated from apps/cms/payload-migrations by scripts/payload-migration-to-sql.mjs",
+    },
+    {
+      id: "301_lms_sample_academy",
+      context: "cms",
+      path: "301_lms_sample_academy/up.sql",
+      checksum:
+        "c880bd56527e9bd580e164f54f45d26ccc01f545689d2b07c02b609e83d681c0",
+      description:
+        "The sample academy (LMS2) — Demo Academy with one published course, Getting started: three lessons and a three-question quiz; hand-written, fixed ids, ON CONFLICT DO NOTHING",
+    },
   ],
 };
