@@ -1,0 +1,17 @@
+apiVersion: orun.io/v1
+kind: TaskContract
+metadata:
+  name: LMS-6
+  title: "LMS5: the record"
+spec:
+  goal: "An owner can open the admin, add an academy and an instructor, publish a course and support learners from the docs alone, and the status file records what shipped."
+  affects:
+    - "apps/cms/docs/**"
+    - "ai/context/operations.md"
+    - "AGENTS.md"
+    - "specs/epics/multi-tenant-saas-2-lms/IMPLEMENTATION-STATUS.md"
+    - "tasks/LMS-6.TaskContract.yaml"
+  doneWhen:
+    - "an owner can open the admin and publish a course from the docs alone"
+    - "the status file is complete"
+  gates: []

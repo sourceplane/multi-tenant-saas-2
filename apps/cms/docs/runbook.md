@@ -27,6 +27,43 @@ setup. Once per environment:
 
 You can delete `CMS_SETUP_TOKEN` afterwards; nothing needs it.
 
+## Run the academy
+
+After the first admin exists (above), everything is in `/admin`:
+
+1. **Add an academy.** *Learning → Academies → Create*: a name (the slug is
+   derived) and whether enrolment is open. *Demo Academy* ships as a sample;
+   edit or delete it.
+2. **Add an instructor.** *Users → Create*: email, a temporary password, role
+   *Instructor*, and the academies they teach. Tell them to change the
+   password after signing in. Instructors see and change only their academies'
+   courses, lessons and quizzes, and read their learners' records there.
+3. **Write a course.** *Learning → Courses → Create* in the academy, then save
+   it as a draft. Add *Lessons* (order, title, minutes, text, an optional
+   YouTube, Vimeo or https video URL) and a *Quiz* (questions, options, the
+   correct option, the passing score). Learners see none of it until the
+   course is **published**.
+4. **Publish.** On the course, *Publish changes*. It appears in the catalogue
+   at `/`, and learners can enrol.
+5. **Check it as a learner.** In a second browser profile (staff and learners
+   share one session cookie), register at `/register`, enrol, and walk it.
+
+A course is complete when every lesson is marked complete and every quiz is
+passed; the certificate is issued at that moment, and its page,
+`/certificates/<serial>`, is public.
+
+### Learner support
+
+- **Locked out after failed sign-ins**: they can retry after 10 minutes, or an
+  admin opens the learner in *Learning → Learners* and unlocks the account.
+- **Forgotten password**: there is no email yet, so an admin sets a new
+  password on the learner in *Learning → Learners*.
+- **A record is wrong** (say, a lesson marked complete by mistake): admins can
+  edit or delete enrolments, progress, attempts and certificates in
+  *Learning*. Learners cannot write them at all.
+- **Closing an academy** (*enrolment: closed*) stops new enrolments; enrolled
+  learners keep their place and can finish.
+
 ## Verify
 
 ```bash
@@ -36,13 +73,17 @@ curl -s -o /dev/null -w '%{http_code}\n' $B/admin      # 200
 curl -s -o /dev/null -w '%{http_code}\n' -X POST $B/api/users/first-register \
   -H content-type:application/json -d '{"email":"x@example.com","password":"x"}'   # 403
 curl -fsS "$B/api/pages?limit=5"                      # published pages only
+curl -fsS "$B/" | grep -c 'data-page="catalogue"'     # 1: the learner catalogue renders
+curl -fsS "$B/api/courses?where[slug][equals]=getting-started" -g   # the sample course
+curl -fsS "$B/api/lms/certificates/<serial>"          # a certificate, by serial
 ```
 
 ## Change a collection
 
 1. Edit the collection in `src/collections/` and run the app locally (below).
-2. `pnpm payload migrate:create <name>` writes a migration and snapshot to
-   `payload-migrations/`.
+2. `PAYLOAD_SECRET=local-only DATABASE_URL=<local db with every migration applied> pnpm payload migrate:create <name>`
+   writes a migration and snapshot to `payload-migrations/` (Payload will not
+   start without a secret; any value does locally).
 3. Convert it: `node scripts/payload-migration-to-sql.mjs payload-migrations/<file>.ts > ../../packages/db/src/migrations/<id>/up.sql`.
    Exit code 2 means a statement could not be made idempotent (a drop, rename
    or type change): rewrite it by hand into a safe, re-runnable form and say so
@@ -51,6 +92,11 @@ curl -fsS "$B/api/pages?limit=5"                      # published pages only
    file's sha256, and to `CONVERTED` in `tests/cms/src/migration-sync.test.ts`.
 5. `pnpm generate:types` and `pnpm generate:importmap` if fields or admin
    components changed.
+6. Prove the SQL is exactly Payload's schema: apply every migration to one
+   empty database, let Payload push its schema into another
+   (`PAYLOAD_SECRET=x PAYLOAD_PUSH=true DATABASE_URL=<empty db> pnpm payload run scripts/init-payload.ts`),
+   and compare `pg_dump -s -n cms` of the two (ignore the `\restrict` lines).
+   They must be identical; re-applying the new migration must succeed too.
 
 ## Run it locally
 
