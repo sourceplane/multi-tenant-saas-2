@@ -2,31 +2,31 @@
 
 ## How it deploys
 
-Merges to `main` converge automatically: CI plans changed components
-(`orun plan --changed`) and runs this component's lane via
-`orun run --remote-state` with credential-free OIDC auth. The convergence
-run is the deployment; the DAG orders this component after everything it
-depends on. Failed lanes resume with `gh run rerun --failed`.
-
-## Rollback
-
-Revert the offending commit on `main`; the next convergence applies the
-previous desired state. There is no out-of-band mutation to undo — the
-repo is the source of truth.
+A merge to `main` that changes `apps/web-console-next` deploys stage, then
+prod, after the CMS. The build compiles the Worker and runs
+`tests/web-console-next`; the smoke check asserts that
+`/orgs/x/settings/billing?checkout=complete` answers `308` to the CMS billing
+page of the same environment, and that following `/login` lands on the CMS's
+Lumen sign-in view.
 
 ## Verify
 
 ```bash
-curl -s -o /dev/null -w '%{http_code}\n' https://multi-tenant-saas-2-web-console-next-stage.nexo-7be.workers.dev
-curl -s -o /dev/null -w '%{http_code}\n' https://multi-tenant-saas-2-web-console-next-prod.nexo-7be.workers.dev
+C=https://multi-tenant-saas-2-web-console-next-stage.nexo-7be.workers.dev
+curl -s -o /dev/null -w '%{http_code} %{redirect_url}\n' $C/            # 308 …-cms-stage…/admin
+curl -s -o /dev/null -w '%{http_code} %{redirect_url}\n' "$C/auth/callback?x=1"   # 308 …/auth/lumen/callback?x=1
 ```
 
-Then probe the edge `/health` too — a green console does not imply a
-healthy API.
+## Change where an old page goes
+
+Edit `ROUTES` in `src/worker.ts` and the table in `tests/web-console-next`
+together.
 
 ## Common failures
 
-- **Build lane slow/failing**: console builds are the heaviest in the
-  repo; check the lane's build output before suspecting infrastructure.
-- **Console up, API calls failing**: verify `api-edge` — the console is
-  static assets and survives an edge outage visually.
+- **Smoke: "308 …" did not match.** The CMS Worker name or the account's
+  workers.dev subdomain changed: `CMS_WORKER_PREFIX` in `src/worker.ts` and
+  `workersDevSubdomain` in `component.yaml` must match the CMS.
+- **Smoke: the final page does not name `LumenSignIn`.** The CMS is down,
+  answering an error, or its sign-in view was renamed; see
+  `apps/cms/docs/runbook.md`.
