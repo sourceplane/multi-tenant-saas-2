@@ -42,6 +42,9 @@
       }
     },
     "stage": {
+      // No public URL: api-edge reaches this Worker over its service binding,
+      // and its API-key routes trust the x-actor-* headers api-edge sets.
+      "workers_dev": false,
       "vars": {
         "ENVIRONMENT": "stage",
         "DEBUG_DELIVERY": "true",
@@ -73,6 +76,9 @@
       ]
     },
     "prod": {
+      // No public URL: api-edge reaches this Worker over its service binding,
+      // and its API-key routes trust the x-actor-* headers api-edge sets.
+      "workers_dev": false,
       "vars": {
         "ENVIRONMENT": "prod",
         "DEBUG_DELIVERY": "false",
