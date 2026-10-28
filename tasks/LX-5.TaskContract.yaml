@@ -11,6 +11,10 @@ spec:
     - "ai/context/operations.md"
     - "apps/cms/docs/**"
     - "apps/web-console-next/docs/**"
+    - "apps/api-edge/docs/overview.md"
+    - "infra/terraform/cloudflare-domain/docs/overview.md"
+    - "packages/contracts/docs/overview.md"
+    - "packages/sdk/docs/overview.md"
     - "specs/epics/multi-tenant-saas-2-console/**"
     - "tasks/LX-5.TaskContract.yaml"
   doneWhen:

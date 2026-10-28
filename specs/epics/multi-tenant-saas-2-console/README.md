@@ -16,14 +16,14 @@ The design is lumen-payload's, as shipped (its `design.md` and
 
 | Field | Value |
 |-------|-------|
-| Status | Proposed |
+| Status | Shipped (2026-10-28) |
 | Cluster | **LX** (LX0–LX4) |
 | Owner(s) | `apps/cms` (staff sign-in, the account and billing pages) · `apps/web-console-next` (retired to a redirect) · `apps/api-edge` (CORS, the `account` rate family) · `apps/identity-worker` (OAuth return allowlist, the security-events fix) · `packages/db` (one migration) |
 | Builds on | `multi-tenant-saas-2-lms` (LMS0–LMS5) and `lumen-payload-console` (PX0–PX5, shipped 2026-10-28) |
 | Changes | Staff accounts move to Lumen sign-in; the account, organization, notifications, security-activity and billing pages move into the admin; the console URL redirects to `/admin`. The academy, its learners and their records do not change. |
 | Decisions locked | (1) The **Payload admin is the staff console**; the Lumen console UI becomes a redirect. (2) **Lumen identity is the only staff sign-in**; `learners` keep their own accounts and sign-in. (3) **Roles stay Payload's**: admin, editor and instructor (with its academies); no role is *pending*; the first admin needs the owner's setup token. (4) **The CMS root stays the academy**; only the console URL and `/admin` change. (5) **Ported as shipped**: lumen-payload's code, tests and departures, with names and the LMS's differences applied. |
 | Gate | LX1 is the first visible change for staff: `/admin` asks for a Lumen sign-in. LX3 retires the console URL. |
-| Shipped as | — |
+| Shipped as | sourceplane/multi-tenant-saas-2#18 (LX0), #19 (LX1), #20 (LX2), #21 (LX3), and this record (LX4) |
 
 ## Read order
 
