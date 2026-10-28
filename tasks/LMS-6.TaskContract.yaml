@@ -9,9 +9,11 @@ spec:
     - "apps/cms/docs/**"
     - "ai/context/operations.md"
     - "AGENTS.md"
-    - "specs/epics/multi-tenant-saas-2-lms/IMPLEMENTATION-STATUS.md"
+    - "specs/epics/multi-tenant-saas-2-lms/**"
     - "tasks/LMS-6.TaskContract.yaml"
   doneWhen:
     - "an owner can open the admin and publish a course from the docs alone"
     - "the status file is complete"
-  gates: []
+  gates:
+    - "the learning platform is live on stage and prod: /health ok with db ok, /admin 200, the catalogue renders, anonymous first-register 403"
+    - "a learner journey on stage, through the API and the browser, ends in a certificate that verifies publicly"

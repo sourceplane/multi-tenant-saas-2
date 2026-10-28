@@ -22,9 +22,15 @@ component-native desired-state repo:
   notifications, …). Never public; reached only through the edge.
 - **`apps/web-console-next`** — the console UI, Next.js on Workers +
   Static Assets, configured against the edge.
+- **`apps/cms`** — the learning platform: Payload CMS on Workers (OpenNext),
+  its own public Worker beside the fleet. The catalogue and learner pages at
+  `/`, the admin at `/admin`, the learner API at `/api/lms`. See
+  [The learning platform](#the-learning-platform-appscms).
 - **`infra/terraform/*`** — data plane: Supabase projects (stage/prod),
-  Cloudflare Hyperdrive, idempotency KV. **`infra/db-migrate`** — database
-  migrations (plan on PRs, apply on merge).
+  Cloudflare Hyperdrive, idempotency KV, and the CMS's own cache-disabled
+  Hyperdrive (`cloudflare-hyperdrive-cms`). **`infra/db-migrate`** —
+  database migrations (plan on PRs, apply on merge), the learning
+  platform's schema `cms` among them.
 - **`packages/*`** — shared contracts/SDK packages the apps build on.
 
 Environments: **`stage`** and **`prod`** are fully provisioned and
@@ -79,9 +85,10 @@ Caveats that matter:
   from the workspace's integration connections. No long-lived values at
   rest; nothing to rotate by hand.
 - **Job-output secrets** (environment rungs): `WIRING_*`,
-  `SUPABASE_PROJECT_REF`, `SUPABASE_DB_URL`, `SUPABASE_DB_PASSWORD` —
-  published by the infrastructure terraform; deploy lanes resolve them to
-  wire worker bindings (KV ids, Hyperdrive ids, database URLs).
+  `SUPABASE_PROJECT_REF`, `SUPABASE_DB_URL`, `SUPABASE_DB_PASSWORD`,
+  `CMS_PAYLOAD_SECRET` — published by the infrastructure terraform; deploy
+  lanes resolve them to wire worker bindings (KV ids, Hyperdrive ids,
+  database URLs) and the CMS's Payload secret.
 - Inspect by NAME only: `orun secrets list --org <ws> --project` and
   `--env stage|prod`. No tooling in this repo ever prints a secret value,
   and no document in `ai/context/` may contain one.
@@ -115,6 +122,8 @@ orun integrations list --org <ws> --json && orun cloud check --org <ws>
 | check integrations | `orun integrations list --org <ws> --json` |
 | custom domain | see [Setting the domain later](#setting-the-domain-later): replace the domain string, create the zone, restore `infra/terraform/cloudflare-domain`'s commented-out `subscribe` block (it ships parked, `subscribe.environments: []`, mid-way to provider v5), merge, then run the `08-docs` phase |
 | headless/CI credentials | `ORUN_TOKEN` (workspace-scoped) + `GITHUB_TOKEN` |
+| open the learning platform's admin | [Open the admin](#open-the-admin-once-per-environment): the owner sets `CMS_SETUP_TOKEN`, then visits `/setup?token=…` once |
+| run an academy (instructors, courses, learner support) | [`apps/cms/docs/runbook.md`](../../apps/cms/docs/runbook.md), *Run the academy* |
 
 The ops phases (docs refresh and the original deployment sequence) all
 live in ONE versioned artifact: `repo-blueprint.yaml` in the baseline this
@@ -136,6 +145,87 @@ before anything runs (and `productdomain` once the product has a domain);
 land and verify rather than just place files; `--status` previews without
 writing. Every phase is idempotent — re-running a completed one is a no-op
 that re-verifies.
+
+## The learning platform (`apps/cms`)
+
+Academies publish courses; learners enrol, work through lessons and quizzes,
+and earn certificates anyone can verify. It is one Payload CMS 3.89 instance
+on Workers (OpenNext), deployed as `multi-tenant-saas-2-cms-<env>` on stage
+and prod, beside the fleet rather than inside it: nothing routes to it
+through `api-edge`, and no worker calls it.
+
+| Surface | Who | What |
+|---|---|---|
+| `/` and `/academies/<academy>` | anyone | the catalogue of published courses |
+| `/courses/<academy>/<course>` | anyone | a course's outline; enrol from here |
+| `/learn/…`, `/me` | signed-in learners | lessons, quizzes, progress, certificates |
+| `/certificates/<serial>` | anyone | verifies a certificate (name, course, academy, date) |
+| `/admin` | staff | academies, courses, lessons, quizzes, learners, site pages |
+| `/api/lms/*` | learners (certificates: anyone) | enrol, complete a lesson, attempt a quiz, my learning, verify |
+
+- **Tenancy:** every course, lesson, quiz and learner record belongs to one
+  academy (a `tenants` row). Admins manage every academy; an instructor only
+  the academies assigned to them. Lesson bodies, quiz questions and answer
+  keys reach only the academy's staff and the learners enrolled in the course.
+- **Learner records are transactional.** Enrolment, lesson completion, quiz
+  attempts and the certificate are written in Postgres transactions that
+  first lock the learner's enrolment row, so two final steps finished at once
+  cannot both miss the completion, and a certificate is issued exactly once.
+- **Database path:** its own Hyperdrive config, `multi-tenant-saas-2-cms-<env>`
+  (`infra/terraform/cloudflare-hyperdrive-cms`), with query caching disabled.
+  Each query or transaction opens its own client; Hyperdrive pools.
+- **Schema:** `cms`, created and changed only by migrations `200`, `300`, `301`
+  and `310` in the `db-migrate` lane. `301` seeds *Demo Academy* with the
+  *Getting started* course; an admin may edit, unpublish or delete it.
+- **Secrets:** `CMS_PAYLOAD_SECRET` is generated and published by
+  `cloudflare-hyperdrive-cms` and pushed to the Worker as `PAYLOAD_SECRET`.
+  `CMS_SETUP_TOKEN` exists only if the owner sets it (below).
+
+### Open the admin (once per environment)
+
+The admin ships **closed**: the first account can only be created through a
+setup token the owner chooses. The full steps, and how to run an academy
+after that, are in [`apps/cms/docs/runbook.md`](../../apps/cms/docs/runbook.md):
+
+```bash
+orun secrets set CMS_SETUP_TOKEN --org <ws> --env stage   # a token of 16+ characters; it prompts
+# merge any change to apps/cms (or re-run its lane) so the deploy pushes it, or:
+#   pnpm --filter @saas/cms exec wrangler secret put CMS_SETUP_TOKEN --name multi-tenant-saas-2-cms-stage
+# then visit https://multi-tenant-saas-2-cms-stage.<subdomain>.workers.dev/setup?token=<token>
+```
+
+That first account is an admin; admins create instructors and editors.
+Learners register themselves at `/register`.
+
+### Verify it
+
+```bash
+B=https://multi-tenant-saas-2-cms-stage.<subdomain>.workers.dev
+curl -fsS $B/health                                   # {"status":"ok","db":"ok"}
+curl -s -o /dev/null -w '%{http_code}\n' $B/admin      # 200
+curl -s $B/ | grep -o 'data-page="catalogue"'         # the catalogue renders
+curl -fsS "$B/api/courses?depth=0" | head -c 200       # published courses, anonymously
+curl -s -o /dev/null -w '%{http_code}\n' -X POST $B/api/users/first-register \
+  -H content-type:application/json -d '{"email":"x@example.com","password":"x"}'   # 403 until setup is opened
+```
+
+The CMS lane's smoke check asserts `/health`, `/admin` and the catalogue
+marker after every deploy.
+
+### Caveats
+
+- **Workers Paid.** The bundle is over Free's 3 MiB compressed, and Payload
+  needs more CPU than Free's 10 ms.
+- **Learner accounts are self-asserted** (LMS-G): there is no email
+  verification yet, so a certificate proves an account finished a course,
+  not who owns it.
+- **One session per browser** (LMS-H): staff and learners share Payload's
+  session cookie; use a second browser profile to act as both.
+- **First landing of a wiring source.** Each CMS deploy needs the Hyperdrive
+  wiring of stage *and* prod, but `dependsOn` only orders within one
+  environment. When this layer first landed (pull request #7) the stage lane
+  ran before prod's wiring existed; one re-run of the failed lanes converged
+  it (risk LMS-J).
 
 ## Setting the domain later
 
