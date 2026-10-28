@@ -1,0 +1,13 @@
+apiVersion: orun.io/v1
+kind: TaskContract
+metadata:
+  name: LX-1
+  title: "LX0: the multi-tenant-saas-2-console doc set"
+spec:
+  goal: "The multi-tenant-saas-2-console epic's design of record is on main: README, design, implementation plan, risks, and status."
+  affects:
+    - "specs/epics/multi-tenant-saas-2-console/**"
+    - "tasks/LX-1.TaskContract.yaml"
+  doneWhen:
+    - "specs/epics/multi-tenant-saas-2-console/ holds README.md, design.md, implementation-plan.md, risks-and-open-questions.md and IMPLEMENTATION-STATUS.md on main"
+  gates: []
