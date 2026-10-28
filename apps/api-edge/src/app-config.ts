@@ -15,3 +15,15 @@ export const CONSOLE_WORKER_PREFIX = "multi-tenant-saas-2-web-console-next";
 export function consoleWorkersDevOrigin(environment: string): string {
   return `https://${CONSOLE_WORKER_PREFIX}-${environment}.${WORKERS_DEV_SUBDOMAIN}.workers.dev`;
 }
+
+/**
+ * Worker name prefix of the Payload CMS (apps/cms), which is becoming the
+ * console (specs/epics/multi-tenant-saas-2-console): its sign-in page calls the
+ * auth routes from the browser.
+ */
+export const CMS_WORKER_PREFIX = "multi-tenant-saas-2-cms";
+
+/** workers.dev origin of the CMS for a given environment name. */
+export function cmsWorkersDevOrigin(environment: string): string {
+  return `https://${CMS_WORKER_PREFIX}-${environment}.${WORKERS_DEV_SUBDOMAIN}.workers.dev`;
+}

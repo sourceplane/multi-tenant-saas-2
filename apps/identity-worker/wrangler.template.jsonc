@@ -37,7 +37,7 @@
         "GITHUB_OAUTH_CLIENT_ID": "",
         "GOOGLE_OAUTH_CLIENT_ID": "",
         "OAUTH_REDIRECT_BASE_URL": "",
-        "OAUTH_ALLOWED_CONSOLE_ORIGINS": "https://multi-tenant-saas-2-web-console-next-dev.nexo-7be.workers.dev",
+        "OAUTH_ALLOWED_CONSOLE_ORIGINS": "https://multi-tenant-saas-2-web-console-next-dev.nexo-7be.workers.dev,https://multi-tenant-saas-2-cms-dev.nexo-7be.workers.dev",
         "SOLO_MODE": "true"
       }
     },
@@ -51,7 +51,7 @@
         "GITHUB_OAUTH_CLIENT_ID": "Ov23liKBsjAqJJsmBavV",
         "GOOGLE_OAUTH_CLIENT_ID": "441163126775-7fabhvpbl9tsga921rklpdlde7mduq34.apps.googleusercontent.com",
         "OAUTH_REDIRECT_BASE_URL": "https://multi-tenant-saas-2-api-edge-stage.nexo-7be.workers.dev",
-        "OAUTH_ALLOWED_CONSOLE_ORIGINS": "https://stage.multi-tenant-saas-2.example.com,https://multi-tenant-saas-2-web-console-next-stage.nexo-7be.workers.dev",
+        "OAUTH_ALLOWED_CONSOLE_ORIGINS": "https://stage.multi-tenant-saas-2.example.com,https://multi-tenant-saas-2-web-console-next-stage.nexo-7be.workers.dev,https://multi-tenant-saas-2-cms-stage.nexo-7be.workers.dev",
         "SOLO_MODE": "true"
       },
       "hyperdrive": [
@@ -85,7 +85,7 @@
         "GITHUB_OAUTH_CLIENT_ID": "Ov23lilp2aoyeBDVU8Vc",
         "GOOGLE_OAUTH_CLIENT_ID": "441163126775-7fabhvpbl9tsga921rklpdlde7mduq34.apps.googleusercontent.com",
         "OAUTH_REDIRECT_BASE_URL": "https://multi-tenant-saas-2-api-edge-prod.nexo-7be.workers.dev",
-        "OAUTH_ALLOWED_CONSOLE_ORIGINS": "https://prod.multi-tenant-saas-2.example.com,https://multi-tenant-saas-2-web-console-next-prod.nexo-7be.workers.dev",
+        "OAUTH_ALLOWED_CONSOLE_ORIGINS": "https://prod.multi-tenant-saas-2.example.com,https://multi-tenant-saas-2-web-console-next-prod.nexo-7be.workers.dev,https://multi-tenant-saas-2-cms-prod.nexo-7be.workers.dev",
         "SOLO_MODE": "true"
       },
       "hyperdrive": [

@@ -1,8 +1,8 @@
-// The first-user gate (design §4). A fresh Payload install hands
-// /admin/create-first-user to whoever arrives first; on a public workers.dev
-// hostname that is an account takeover window. So creating the FIRST user
-// requires a token equal to the Worker secret CMS_SETUP_TOKEN, which only the
-// owner can set. Without that secret, setup is closed.
+// The first-admin gate (lumen-payload-cms design §4, lumen-payload-console
+// design §3). Anyone with a Lumen account can sign in, and on stage anyone can
+// get one, so becoming the FIRST admin requires a token equal to the Worker
+// secret CMS_SETUP_TOKEN, which only the owner can set. Without that secret,
+// setup is closed and every new account stays pending.
 //
 // Pure functions, no Payload imports: tests/cms exercises them directly.
 

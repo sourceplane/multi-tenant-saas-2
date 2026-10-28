@@ -1,58 +1,55 @@
-import { APIError, type CollectionBeforeChangeHook, type CollectionBeforeOperationHook, type CollectionConfig } from 'payload'
+import type { CollectionAfterLogoutHook, CollectionConfig } from 'payload'
 
-import { adminOrSelf, isAdmin, isAdminField, isStaff } from '../lib/access'
-import { presentedSetupToken, SETUP_CLOSED_MESSAGE, setupIsOpen } from '../lib/setup-gate'
+import { adminOrSelf, isAdmin, isAdminField, isStaff, selfOrAdmin } from '../lib/access'
+import { lumenStrategy } from '../lib/lumen/strategy'
 
-const noUsersYet = async (req: Parameters<CollectionBeforeOperationHook>[0]['req']): Promise<boolean> => {
-  const { totalDocs } = await req.payload.count({ collection: 'users', overrideAccess: true, req })
-  return totalDocs === 0
+// Sign-out from Payload's own endpoint (/api/users/logout, which the admin
+// calls on inactivity) ends the Lumen session too, so the cookie cannot sign
+// the person straight back in.
+const endLumenSession: CollectionAfterLogoutHook = async ({ req }) => {
+  const [{ lumenTransport }, { endSession }] = await Promise.all([import('../lib/lumen/transport'), import('../lib/lumen/logout')])
+  const secure = new URL(req.url ?? 'https://cms.invalid').protocol === 'https:'
+  const { setCookie } = await endSession(await lumenTransport(), req.headers, secure)
+  req.responseHeaders ??= new Headers()
+  req.responseHeaders.append('set-cookie', setCookie)
 }
 
-// Creating the first account — the only create an anonymous request can reach,
-// through /api/users/first-register — needs the owner's setup token. Every
-// later account is created by an admin, which the create rule enforces.
-const firstUserGate: CollectionBeforeOperationHook = async ({ operation, req }) => {
-  if (operation !== 'create' || req.user) return
-  if (!(await noUsersYet(req))) return
-  if (!setupIsOpen(process.env.CMS_SETUP_TOKEN, presentedSetupToken(req.headers))) {
-    throw new APIError(SETUP_CLOSED_MESSAGE, 403, undefined, true)
-  }
-}
-
-// Whoever creates the first account is its admin.
-const firstUserIsAdmin: CollectionBeforeChangeHook = async ({ data, operation, req }) => {
-  if (operation === 'create' && (await noUsersYet(req))) return { ...data, role: 'admin' }
-  return data
-}
-
+// Staff accounts (multi-tenant-saas-2-console design §2–§3). Staff sign in
+// with their Lumen account; there are no Payload passwords for staff.
+// Learners are a different collection with their own sign-in and are not
+// touched. A row is created on first sign-in and linked by lumenUserId. No
+// role means pending: signed in but not let into the admin. An admin can also
+// add a row by email beforehand, with a role, as an invitation: it is linked
+// when that email signs in.
 export const Users: CollectionConfig = {
   slug: 'users',
-  auth: true,
-  admin: { useAsTitle: 'email', defaultColumns: ['email', 'name', 'role'] },
+  auth: {
+    // enableFields keeps the auth columns (email, sessions, ...) so the
+    // schema stays as migration 200 made it; only the password flows go.
+    disableLocalStrategy: { enableFields: true },
+    strategies: [lumenStrategy],
+  },
+  admin: { useAsTitle: 'email', defaultColumns: ['email', 'name', 'role', 'lumenUserId'] },
   access: {
     admin: isStaff,
-    read: adminOrSelf,
+    read: selfOrAdmin,
     create: isAdmin,
     update: adminOrSelf,
     delete: isAdmin,
   },
-  hooks: {
-    beforeOperation: [firstUserGate],
-    beforeChange: [firstUserIsAdmin],
-  },
+  hooks: { afterLogout: [endLumenSession] },
   fields: [
     { name: 'name', type: 'text' },
     {
       name: 'role',
       type: 'select',
-      required: true,
-      defaultValue: 'editor',
       saveToJWT: true,
       options: [
         { label: 'Admin', value: 'admin' },
         { label: 'Editor (site pages and posts)', value: 'editor' },
         { label: 'Instructor (courses in their academies)', value: 'instructor' },
       ],
+      admin: { description: 'Empty means pending: signed in with Lumen, but not let into the admin yet.' },
       access: { create: isAdminField, update: isAdminField },
     },
     {
@@ -65,6 +62,15 @@ export const Users: CollectionConfig = {
       saveToJWT: true,
       access: { create: isAdminField, update: isAdminField },
       admin: { condition: (data) => data?.role === 'instructor' },
+    },
+    {
+      name: 'lumenUserId',
+      label: 'Lumen user',
+      type: 'text',
+      unique: true,
+      index: true,
+      admin: { readOnly: true, position: 'sidebar', description: 'Set on first Lumen sign-in.' },
+      access: { create: () => false, update: () => false },
     },
   ],
 }

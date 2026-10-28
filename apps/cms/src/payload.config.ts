@@ -45,6 +45,16 @@ export default buildConfig({
     user: Users.slug,
     importMap: { baseDir: path.resolve(dirname) },
     meta: { titleSuffix: ' — CMS' },
+    // Lumen sign-in replaces Payload's password views for staff
+    // (multi-tenant-saas-2-console design §1–§2): Payload's local strategy is
+    // off on `users`. Learners keep their own sign-in in the academy.
+    components: {
+      views: {
+        login: { Component: '/components/admin/LumenLogin#LumenLogin' },
+        unauthorized: { Component: '/components/admin/PendingAccess#PendingAccess' },
+        logout: { Component: '/components/admin/LumenSignOut#LumenSignOut' },
+      },
+    },
   },
   collections: [
     Users,

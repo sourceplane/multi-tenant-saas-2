@@ -10,8 +10,12 @@ at `/api/<collection>` and GraphQL at `/api/graphql`, over Postgres schema
 
 ## What it holds
 
-- **users**: staff accounts (`admin`, `editor`). The first account is created
-  through the setup gate and is an admin; admins create the rest.
+- **users**: staff accounts, one per Lumen account that signed in
+  (`lumenUserId`). Sign-in is Lumen's (emailed code, GitHub, Google); there are
+  no staff passwords. A new account has no role (pending) until an admin makes
+  it an `editor`, `instructor` or `admin`; the first admin signs in through the
+  owner's setup token. Learners are not staff: they have their own accounts
+  (below).
 - **pages** and **posts**: drafts, versions (25 per document), a Lexical
   rich-text body and a unique slug. Posts have an excerpt and a category.
 - **categories**: name and slug.
@@ -71,17 +75,23 @@ the same person.
 | `/certificates/<serial>` | the certificate: public, printable |
 | `/login`, `/register` | learner accounts |
 
-Staff and learners share Payload's session cookie, so one browser holds one
-session at a time.
+Staff (the Lumen `lumen_session` cookie) and learners (Payload's own session
+cookie) sign in separately. A browser holding both is staff to the API, so
+check the academy as a learner in another browser profile.
 
 ## Depends on
 
 - **cloudflare-hyperdrive-cms**: its database path (cache disabled) and its
   generated Payload secret.
-- **db-migrate**: applies schema `cms` (migration `200_cms_payload_core`)
-  before the CMS deploys.
+- **db-migrate**: applies schema `cms` (migrations `200_cms_payload_core`,
+  `300_lms_course_model`, `301_lms_sample_academy`, `310_lms_learner_records`
+  and `320_cms_lumen_identity`) before the CMS deploys.
+- **api-edge**: the CMS asks it, over a service binding, whose Lumen session a
+  staff request carries, and ends the session on sign-out. Its CORS lets the
+  CMS's sign-in page call the auth routes, and identity-worker's OAuth return
+  allowlist includes the CMS.
 
-Nothing in the fleet calls the CMS, and the CMS calls nothing in the fleet.
+Nothing in the fleet calls the CMS.
 
 ## Verified by
 

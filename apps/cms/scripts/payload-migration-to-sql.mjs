@@ -8,9 +8,10 @@
 //
 // Idempotent because the runner sends a migration as one query to the Supabase
 // Management API with no transaction of its own: a partial apply must converge
-// on retry. Statements it cannot make idempotent (drops, renames, type
-// changes) are kept as written and reported on stderr, and the exit code is 2
-// so they cannot slip through unread.
+// on retry. Column default and nullability changes are idempotent as they
+// are. Statements it cannot make idempotent (drops, renames, type changes) are
+// kept as written and reported on stderr, and the exit code is 2 so they
+// cannot slip through unread.
 import { readFileSync } from 'node:fs'
 import { basename } from 'node:path'
 
@@ -45,6 +46,8 @@ const out = statements.map((stmt) => {
   if (/^ALTER TABLE \S+ ADD CONSTRAINT /.test(stmt)) return guarded(stmt)
   if (/^ALTER TABLE \S+ ADD COLUMN "/.test(stmt)) return stmt.replace(/ ADD COLUMN "/, ' ADD COLUMN IF NOT EXISTS "') + ';'
   if (/^ALTER TYPE \S+ ADD VALUE '/.test(stmt)) return stmt.replace(/ ADD VALUE '/, " ADD VALUE IF NOT EXISTS '") + ';'
+  // Re-running these leaves the column as the first run did: already idempotent.
+  if (/^ALTER TABLE \S+ ALTER COLUMN "[^"]+" (DROP DEFAULT|DROP NOT NULL|SET NOT NULL|SET DEFAULT [^;]+)$/.test(stmt)) return stmt + ';'
   unsafe.push(stmt.split('\n')[0])
   return stmt + ';'
 })

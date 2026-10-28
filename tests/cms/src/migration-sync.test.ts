@@ -17,6 +17,7 @@ const CONVERTED: Record<string, string> = {
   '20261027_203229_cms_payload_core.ts': '200_cms_payload_core',
   '20261027_213624_lms_course_model.ts': '300_lms_course_model',
   '20261027_214746_lms_learner_records.ts': '310_lms_learner_records',
+  '20261028_213731_cms_lumen_identity.ts': '320_cms_lumen_identity',
 }
 
 describe('Payload migrations ↔ db-migrate', () => {
