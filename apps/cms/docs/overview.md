@@ -54,6 +54,26 @@ answer key.
 Completing a course sets the enrolment `completed` and issues exactly one
 certificate in the same transaction as the write that finished it.
 
+### The learner app
+
+Server-rendered pages in the same Worker, reading through Payload with the
+visitor's own access rules, so a page shows exactly what the API would give
+the same person.
+
+| Route | Page |
+|---|---|
+| `/` | the catalogue, by academy |
+| `/academies/<academy>` | one academy's courses |
+| `/courses/<academy>/<course>` | outline, progress, Enrol / Continue |
+| `/learn/<academy>/<course>/<lesson>` | the lesson (enrolled learners), Mark complete |
+| `/learn/<academy>/<course>/quiz/<quiz>` | the quiz and its result |
+| `/me` | my courses, progress and certificates |
+| `/certificates/<serial>` | the certificate: public, printable |
+| `/login`, `/register` | learner accounts |
+
+Staff and learners share Payload's session cookie, so one browser holds one
+session at a time.
+
 ## Depends on
 
 - **cloudflare-hyperdrive-cms**: its database path (cache disabled) and its
