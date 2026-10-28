@@ -34,7 +34,11 @@ function stripJsonc(text: string): string {
   return out
 }
 
-type Env = { vars?: Record<string, string>; hyperdrive?: Array<{ binding: string; id: string }> }
+type Env = {
+  vars?: Record<string, string>
+  hyperdrive?: Array<{ binding: string; id: string }>
+  r2_buckets?: Array<{ binding: string; bucket_name: string }>
+}
 let rendered: Env & {
   name: string
   main: string
@@ -65,6 +69,8 @@ describe('wrangler config', () => {
     expect(template).not.toMatch(/"id":\s*"[0-9a-f]{32}"/)
     expect(template).toContain('@@wiring(cloudflare-hyperdrive-cms/stage:hyperdrive_id)@@')
     expect(template).toContain('@@wiring(cloudflare-hyperdrive-cms/prod:hyperdrive_id)@@')
+    expect(template).toContain('@@wiring(cloudflare-r2-cms/stage:bucket_name)@@')
+    expect(template).toContain('@@wiring(cloudflare-r2-cms/prod:bucket_name)@@')
   })
 
   it('deploys the OpenNext build: worker and static assets', () => {
@@ -88,8 +94,16 @@ describe('wrangler config', () => {
     expect(rendered.env[env]!.vars).toEqual({ ENVIRONMENT: env })
   })
 
-  it('dev binds no database: it never deploys', () => {
+  it.each([
+    ['stage', 'stg-multi-tenant-saas-2-cms-media-stage'],
+    ['prod', 'prod-multi-tenant-saas-2-cms-media-prod'],
+  ])('%s binds R2_MEDIA to its own media bucket', (env, bucket) => {
+    expect(rendered.env[env]!.r2_buckets).toEqual([{ binding: 'R2_MEDIA', bucket_name: bucket }])
+  })
+
+  it('dev binds no database and no bucket: it never deploys', () => {
     expect(rendered.env.dev!.hyperdrive).toBeUndefined()
+    expect(rendered.env.dev!.r2_buckets).toBeUndefined()
   })
 
   it('carries no secrets: PAYLOAD_SECRET and CMS_SETUP_TOKEN are Worker secrets', () => {

@@ -76,6 +76,34 @@ curl -fsS "$B/api/pages?limit=5"                      # published pages only
 curl -fsS "$B/" | grep -c 'data-page="catalogue"'     # 1: the learner catalogue renders
 curl -fsS "$B/api/courses?where[slug][equals]=getting-started" -g   # the sample course
 curl -fsS "$B/api/lms/certificates/<serial>"          # a certificate, by serial
+curl -fsS "$B/api/media?limit=5"                      # media, anonymously readable
+```
+
+## Media
+
+Staff upload images (JPEG, PNG, GIF, WebP, AVIF) and PDFs in *Media* in
+`/admin`, or embed them from rich text. Each upload needs alt text and is at
+most 10 MiB; SVG is refused. Files are stored in the environment's R2 bucket
+(`stg-multi-tenant-saas-2-cms-media-stage`, `prod-multi-tenant-saas-2-cms-media-prod`;
+`infra/terraform/cloudflare-r2-cms`) and served at `/api/media/file/<filename>`
+to anyone, so put nothing there that only enrolled learners may see. A second
+file with the same name gets a suffix (`photo-1.jpg`).
+
+Every file belongs to the site or to one academy (*Academy* in the sidebar):
+
+| who | uploads | edits or replaces | deletes |
+|---|---|---|---|
+| admin | anywhere | everything | yes |
+| editor | the site's media (no academy) | the site's media | no |
+| instructor | their academies' media (academy required) | their academies' media | no |
+
+Deleting removes the object from the bucket too.
+
+```bash
+# as an instructor (a session token from /api/users/login), into their academy:
+curl -H "Authorization: JWT <token>" -F "file=@photo.jpg;type=image/jpeg" \
+  -F '_payload={"alt":"What the photo shows","tenant":"<academy id>"}' "$B/api/media"
+curl -fsS -o /dev/null -w '%{http_code}\n' "$B/api/media/file/photo.jpg"   # 200
 ```
 
 ## Change a collection
@@ -103,8 +131,10 @@ curl -fsS "$B/api/lms/certificates/<serial>"          # a certificate, by serial
 ```bash
 # Postgres 16 on 127.0.0.1:54329 with a database `cms`, then:
 export DATABASE_URL=postgres://postgres:<pw>@127.0.0.1:54329/cms
-psql "$DATABASE_URL" -f ../../packages/db/src/migrations/200_cms_payload_core/up.sql
-pnpm dev                                        # Node, http://localhost:3002
+for m in 200_cms_payload_core 300_lms_course_model 301_lms_sample_academy 310_lms_learner_records 320_cms_media; do
+  psql "$DATABASE_URL" -f ../../packages/db/src/migrations/$m/up.sql
+done
+pnpm dev                                        # Node, http://localhost:3002; uploads go to a local folder
 
 # The real runtime (workerd), after `pnpm build`:
 node ../../tooling/wire/render.mjs --template wrangler.template.jsonc --out wrangler.jsonc --map wiring.fixture.json
@@ -113,7 +143,9 @@ CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE_CMS="$DATABASE_URL" \
   pnpm exec wrangler dev --config wrangler.jsonc --env stage --port 8799
 ```
 
-`wrangler dev` needs a password in the local connection string.
+`wrangler dev` needs a password in the local connection string. It serves
+`R2_MEDIA` from a local bucket under `.wrangler/state`, so uploads exercise the
+real R2 adapter.
 
 ## Common failures
 
@@ -128,6 +160,21 @@ CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE_CMS="$DATABASE_URL" \
   - `{"db":"error"}`: Payload started but the query failed: check that
     `cloudflare-hyperdrive-cms` applied, that the deploy rendered the right
     `HYPERDRIVE_CMS` id, and that db-migrate applied migration 200.
+- **Deploy: "Authentication error [code: 10000]" on `/r2/buckets/<name>`.**
+  Wrangler's resource provisioning checked the bucket with the brokered
+  `workers-deploy` token, which has no R2 permission. `skipResourceProvisioning:
+  true` in `component.yaml` turns that check off (stack-tectonic 0.21.0 and
+  later); check it is still set and the stack pin in `intent.yaml` has not
+  gone back below 0.21.0. The bucket itself comes from `cloudflare-r2-cms`.
+- **Uploads fail with "R2_MEDIA binding is missing".** The deploy rendered no
+  `R2_MEDIA` binding: check that `cloudflare-r2-cms` applied for that
+  environment and published `WIRING_CLOUDFLARE_R2_CMS`, then redeploy the CMS.
+- **An upload answers 413.** It is over 10 MiB (`MEDIA_MAX_BYTES` in
+  `src/collections/Media.ts`).
+- **An upload or edit answers 403 "You can only add media to your own
+  academies."** An instructor's file needs one of their academies in
+  *Academy*; editors' files need it empty. Admins assign academies to
+  instructors in *Users*.
 - **Deploy: "exceeds the size limit" or CPU errors (1102).** The account is on
   Workers Free. The CMS needs Workers Paid.
 - **Requests hang for 10 s, then 500.** A regression to a shared pool: the

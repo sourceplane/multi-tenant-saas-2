@@ -219,5 +219,14 @@ export const manifest: MigrationManifest = {
       description:
         "LMS learner records (multi-tenant-saas-2-lms LMS3) — learners (auth) and their sessions, enrolments, lesson progress, quiz attempts and certificates, with unique (learner, course) enrolments and certificates, unique (learner, lesson) progress and unique serials; generated from apps/cms/payload-migrations",
     },
+    {
+      id: "320_cms_media",
+      context: "cms",
+      path: "320_cms_media/up.sql",
+      checksum:
+        "b5049eb7b9ddec5627e7f0a95665b63971f9895917b6f7d7fc0338665e04c346",
+      description:
+        "CMS media (the lumen-payload-cms layer's PC4, ported by multi-tenant-saas-2-lms LMS6) — the media upload collection with alt text and an optional academy (tenants), its unique filename, and the lock table's media column; files themselves live in R2; generated from apps/cms/payload-migrations",
+    },
   ],
 };

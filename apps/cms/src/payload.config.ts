@@ -3,6 +3,7 @@ import { fileURLToPath } from 'url'
 import { getCloudflareContext } from '@opennextjs/cloudflare'
 import { postgresAdapter } from '@payloadcms/db-postgres'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
+import { r2Storage } from '@payloadcms/storage-r2'
 import { buildConfig } from 'payload'
 
 import { Categories } from './collections/Categories'
@@ -12,11 +13,13 @@ import { Lessons } from './collections/lms/Lessons'
 import { Quizzes } from './collections/lms/Quizzes'
 import { Certificates, Enrolments, LessonProgress, QuizAttempts } from './collections/lms/records'
 import { Tenants } from './collections/lms/Tenants'
+import { Media, MEDIA_UPLOAD_OPTIONS } from './collections/Media'
 import { Pages } from './collections/Pages'
 import { Posts } from './collections/Posts'
 import { Users } from './collections/Users'
 import { cloudflareLogger } from './lib/logger'
 import { lmsEndpoints } from './lms/endpoints'
+import { mediaBucketFrom } from './lib/media-bucket'
 import { requestScopedPg } from './lib/request-scoped-pool'
 import { isWorkersRuntime } from './lib/runtime'
 
@@ -28,9 +31,11 @@ const dirname = path.dirname(fileURLToPath(import.meta.url))
 // cached read on write. Everywhere else — `next build`, the payload CLI, local
 // development — it is DATABASE_URL. `next build` never opens it: every route
 // is dynamic.
+const workersEnv = isWorkersRuntime() ? (await getCloudflareContext({ async: true })).env : undefined
+
 async function resolveConnectionString(): Promise<string> {
-  if (isWorkersRuntime()) {
-    const { env } = await getCloudflareContext({ async: true })
+  if (workersEnv) {
+    const env = workersEnv
     if (env.HYPERDRIVE_CMS?.connectionString) return env.HYPERDRIVE_CMS.connectionString
     // A Worker without its binding cannot serve: say so, and let /health
     // answer 503 so the deploy's smoke check fails instead of the module.
@@ -60,6 +65,9 @@ export default buildConfig({
     LessonProgress,
     QuizAttempts,
     Certificates,
+    // Last, so Payload's own schema puts media_id last in its lock table,
+    // where migration 320's ALTER TABLE ... ADD COLUMN puts it.
+    Media,
   ],
   endpoints: lmsEndpoints,
   editor: lexicalEditor(),
@@ -67,6 +75,19 @@ export default buildConfig({
   typescript: { outputFile: path.resolve(dirname, 'payload-types.ts') },
   graphQL: { disablePlaygroundInProduction: true },
   telemetry: false,
+  upload: MEDIA_UPLOAD_OPTIONS,
+  plugins: [
+    // Uploads live in the CMS's R2 bucket, never on a disk. On Workers the
+    // adapter is always on: without the R2_MEDIA binding every upload fails
+    // naming it (lib/media-bucket.ts). Off Workers (local `next dev`, the
+    // payload CLI, `next build`) it is off and Payload's local disk storage
+    // stands in; no prefix is configured, so the table is the same either way.
+    r2Storage({
+      enabled: Boolean(workersEnv),
+      bucket: mediaBucketFrom(workersEnv),
+      collections: { media: true },
+    }),
+  ],
   logger: isWorkersRuntime() ? cloudflareLogger : undefined,
   db: postgresAdapter({
     // Every table lives in schema `cms`, created by migration

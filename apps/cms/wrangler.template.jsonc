@@ -21,12 +21,18 @@
       "vars": { "ENVIRONMENT": "stage" },
       "hyperdrive": [
         { "binding": "HYPERDRIVE_CMS", "id": "@@wiring(cloudflare-hyperdrive-cms/stage:hyperdrive_id)@@" }
+      ],
+      "r2_buckets": [
+        { "binding": "R2_MEDIA", "bucket_name": "@@wiring(cloudflare-r2-cms/stage:bucket_name)@@" }
       ]
     },
     "prod": {
       "vars": { "ENVIRONMENT": "prod" },
       "hyperdrive": [
         { "binding": "HYPERDRIVE_CMS", "id": "@@wiring(cloudflare-hyperdrive-cms/prod:hyperdrive_id)@@" }
+      ],
+      "r2_buckets": [
+        { "binding": "R2_MEDIA", "bucket_name": "@@wiring(cloudflare-r2-cms/prod:bucket_name)@@" }
       ]
     }
   }

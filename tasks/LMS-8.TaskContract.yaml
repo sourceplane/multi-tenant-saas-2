@@ -1,0 +1,30 @@
+apiVersion: orun.io/v1
+kind: TaskContract
+metadata:
+  name: LMS-8
+  title: "LMS6, part 2: media in the CMS, scoped to academies (lumen-payload PC4 on the LMS)"
+spec:
+  goal: "Staff upload images and PDFs to the environment's R2 bucket on stage and prod; each file belongs to the site or one academy, and only that academy's instructors (or admins) change it."
+  affects:
+    - "apps/cms/**"
+    - "tests/cms/**"
+    - "packages/db/src/manifest.ts"
+    - "packages/db/src/migrations/320_cms_media/**"
+    - "tests/db/src/cms-migration.test.ts"
+    - "pnpm-lock.yaml"
+    - "intent.yaml"
+    - "tasks/LMS-8.TaskContract.yaml"
+  deps:
+    - "LMS-7"
+  doneWhen:
+    - "every lane of the PR is green: the CMS build, its suite, typecheck and a wrangler deploy --dry-run that binds R2_MEDIA"
+    - "after the merge, on stage and prod: 320_cms_media applied, the deploy binds R2_MEDIA, /health ok and /api/media answers"
+  gates:
+    - "migrations 200 to 320 produce exactly the schema Payload pushes (pg_dump -s -n cms identical), and 320 re-applies cleanly"
+    - "the built Worker passes the local media run in workerd with a local R2 bucket, including the academy rules"
+    - "pnpm --filter @saas/cms-tests build passes"
+  secrets:
+    - "PAYLOAD_SECRET"
+  envs:
+    - "stage"
+    - "prod"
