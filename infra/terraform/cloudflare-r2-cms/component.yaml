@@ -1,0 +1,54 @@
+apiVersion: sourceplane.io/v1
+kind: Component
+
+metadata:
+  name: cloudflare-r2-cms
+  description: The CMS's private media bucket per environment, on Cloudflare R2
+  labels:
+    domain: infra
+    scope: runtime-object-storage
+
+spec:
+  docs:
+    overview: docs/overview.md
+    pages:
+      - { path: docs/architecture.md, role: architecture }
+      - { path: docs/runbook.md, role: runbook }
+  type: terraform
+  lifecycle: production
+  owner: platform
+  domain: infra
+
+  parameters:
+    orgName: sourceplane
+    stackName: cloudflare-r2-cms
+    terraformDir: terraform
+    terraformVersion: "1.15.3"
+    # Lease-published after apply. apps/cms reads it back as
+    # WIRING_CLOUDFLARE_R2_CMS_<ENV> to render its R2_MEDIA binding.
+    secretOutputs: "WIRING_CLOUDFLARE_R2_CMS=wiring"
+
+  # CLOUDFLARE_R2_TOKEN is minted from the Cloudflare connection's r2-data
+  # template (Workers R2 Storage Write) and rotated by the platform; the fleet's
+  # workers-deploy token has no R2 permission. The account id is the brokered
+  # fact every Cloudflare component reads.
+  secretEnv:
+    CLOUDFLARE_API_TOKEN: "secret://org_1116c98ad8b6459694e495746d1eca14/multi-tenant-saas-2/{{ .environment }}/CLOUDFLARE_R2_TOKEN"
+    CLOUDFLARE_ACCOUNT_ID: "secret://org_1116c98ad8b6459694e495746d1eca14/multi-tenant-saas-2/{{ .environment }}/CLOUDFLARE_ACCOUNT_ID"
+    TF_VAR_cloudflare_account_id: "secret://org_1116c98ad8b6459694e495746d1eca14/multi-tenant-saas-2/{{ .environment }}/CLOUDFLARE_ACCOUNT_ID"
+
+  subscribe:
+    environments:
+      - name: stage
+        profile: plan-only
+        profileRules:
+          - profile: apply
+            when:
+              triggerRef: github-push-main
+
+      - name: prod
+        profile: plan-only
+        profileRules:
+          - profile: apply
+            when:
+              triggerRef: github-push-main
