@@ -96,4 +96,4 @@ spec:
     surface: notifications
     runtime: cloudflare
 # ci: re-trigger deploy (verify orun-secrets brokered CLOUDFLARE_API_TOKEN resolve in worker deploy lane, 20260727T153639Z)
-# orun: redeploy 04-workers as_174c1bfbb7904bf182a4
+# orun: redeploy 04-workers as_c778553f7ed74a0fa6ec

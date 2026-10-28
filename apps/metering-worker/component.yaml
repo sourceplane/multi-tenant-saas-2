@@ -107,4 +107,4 @@ spec:
     surface: metering
     runtime: cloudflare
 # ci: re-trigger deploy (batch B — membership-dependents, 20260622T140838Z)
-# orun: redeploy 04-workers as_174c1bfbb7904bf182a4
+# orun: redeploy 04-workers as_c778553f7ed74a0fa6ec
