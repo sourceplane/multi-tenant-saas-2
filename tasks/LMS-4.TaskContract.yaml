@@ -16,7 +16,7 @@ spec:
     - "tasks/LMS-4.TaskContract.yaml"
   doneWhen:
     - "the migration applies on stage and prod"
-    - "on stage, through the API alone: a learner registers, enrols in the sample course, completes its three lessons, passes its quiz, and GET /api/lms/certificates/<serial> verifies the certificate that was issued"
+    - "on stage, through the API alone: a learner registers, enrols in the sample course, finishes its lessons and quiz, and /api/lms/certificates/<serial> verifies the certificate"
     - "a failing quiz attempt does not complete the course; a second enrol is a no-op"
   gates:
     - "migrations 200-310 yield exactly the schema Payload pushes; 310 re-applies cleanly"
