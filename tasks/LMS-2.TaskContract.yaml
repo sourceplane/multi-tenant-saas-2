@@ -20,5 +20,4 @@ spec:
     - "after the merge, on stage and prod: /health answers ok, /admin answers 200, and an anonymous first-register answers 403"
   gates:
     - "pnpm --filter @saas/cms-tests build and pnpm --filter @saas/db-tests test pass"
-  needs:
-    - "the Cloudflare account on Workers Paid"
+  # Prerequisite (not a contract field): the Cloudflare account on Workers Paid (risk LMS-I).
