@@ -64,6 +64,7 @@ export type SupportedTimezones =
 export interface Config {
   auth: {
     users: UserAuthOperations;
+    learners: LearnerAuthOperations;
   };
   blocks: {};
   collections: {
@@ -75,6 +76,11 @@ export interface Config {
     courses: Course;
     lessons: Lesson;
     quizzes: Quiz;
+    learners: Learner;
+    enrolments: Enrolment;
+    'lesson-progress': LessonProgress;
+    'quiz-attempts': QuizAttempt;
+    certificates: Certificate;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -90,6 +96,11 @@ export interface Config {
     courses: CoursesSelect<false> | CoursesSelect<true>;
     lessons: LessonsSelect<false> | LessonsSelect<true>;
     quizzes: QuizzesSelect<false> | QuizzesSelect<true>;
+    learners: LearnersSelect<false> | LearnersSelect<true>;
+    enrolments: EnrolmentsSelect<false> | EnrolmentsSelect<true>;
+    'lesson-progress': LessonProgressSelect<false> | LessonProgressSelect<true>;
+    'quiz-attempts': QuizAttemptsSelect<false> | QuizAttemptsSelect<true>;
+    certificates: CertificatesSelect<false> | CertificatesSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -105,13 +116,31 @@ export interface Config {
   widgets: {
     collections: CollectionsWidget;
   };
-  user: User;
+  user: User | Learner;
   jobs: {
     tasks: unknown;
     workflows: unknown;
   };
 }
 export interface UserAuthOperations {
+  forgotPassword: {
+    email: string;
+    password: string;
+  };
+  login: {
+    email: string;
+    password: string;
+  };
+  registerFirstUser: {
+    email: string;
+    password: string;
+  };
+  unlock: {
+    email: string;
+    password: string;
+  };
+}
+export interface LearnerAuthOperations {
   forgotPassword: {
     email: string;
     password: string;
@@ -346,6 +375,101 @@ export interface Quiz {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "learners".
+ */
+export interface Learner {
+  id: string;
+  name: string;
+  updatedAt: string;
+  createdAt: string;
+  email: string;
+  resetPasswordToken?: string | null;
+  resetPasswordExpiration?: string | null;
+  salt?: string | null;
+  hash?: string | null;
+  loginAttempts?: number | null;
+  lockUntil?: string | null;
+  sessions?:
+    | {
+        id: string;
+        createdAt?: string | null;
+        expiresAt: string;
+      }[]
+    | null;
+  password?: string | null;
+  collection: 'learners';
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "enrolments".
+ */
+export interface Enrolment {
+  id: string;
+  tenant: string | Tenant;
+  learner: string | Learner;
+  course: string | Course;
+  status: 'active' | 'completed';
+  enrolledAt: string;
+  completedAt?: string | null;
+  lastActivityAt?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "lesson-progress".
+ */
+export interface LessonProgress {
+  id: string;
+  tenant: string | Tenant;
+  learner: string | Learner;
+  course: string | Course;
+  lesson: string | Lesson;
+  completedAt: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "quiz-attempts".
+ */
+export interface QuizAttempt {
+  id: string;
+  tenant: string | Tenant;
+  learner: string | Learner;
+  course: string | Course;
+  quiz: string | Quiz;
+  score: number;
+  passed: boolean;
+  answers:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  submittedAt: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "certificates".
+ */
+export interface Certificate {
+  id: string;
+  tenant: string | Tenant;
+  learner: string | Learner;
+  course: string | Course;
+  serial: string;
+  issuedAt: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
@@ -399,12 +523,37 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'quizzes';
         value: string | Quiz;
+      } | null)
+    | ({
+        relationTo: 'learners';
+        value: string | Learner;
+      } | null)
+    | ({
+        relationTo: 'enrolments';
+        value: string | Enrolment;
+      } | null)
+    | ({
+        relationTo: 'lesson-progress';
+        value: string | LessonProgress;
+      } | null)
+    | ({
+        relationTo: 'quiz-attempts';
+        value: string | QuizAttempt;
+      } | null)
+    | ({
+        relationTo: 'certificates';
+        value: string | Certificate;
       } | null);
   globalSlug?: string | null;
-  user: {
-    relationTo: 'users';
-    value: string | User;
-  };
+  user:
+    | {
+        relationTo: 'users';
+        value: string | User;
+      }
+    | {
+        relationTo: 'learners';
+        value: string | Learner;
+      };
   updatedAt: string;
   createdAt: string;
 }
@@ -414,10 +563,15 @@ export interface PayloadLockedDocument {
  */
 export interface PayloadPreference {
   id: string;
-  user: {
-    relationTo: 'users';
-    value: string | User;
-  };
+  user:
+    | {
+        relationTo: 'users';
+        value: string | User;
+      }
+    | {
+        relationTo: 'learners';
+        value: string | Learner;
+      };
   key?: string | null;
   value?:
     | {
@@ -573,6 +727,86 @@ export interface QuizzesSelect<T extends boolean = true> {
         correctIndex?: T;
         id?: T;
       };
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "learners_select".
+ */
+export interface LearnersSelect<T extends boolean = true> {
+  name?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  email?: T;
+  resetPasswordToken?: T;
+  resetPasswordExpiration?: T;
+  salt?: T;
+  hash?: T;
+  loginAttempts?: T;
+  lockUntil?: T;
+  sessions?:
+    | T
+    | {
+        id?: T;
+        createdAt?: T;
+        expiresAt?: T;
+      };
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "enrolments_select".
+ */
+export interface EnrolmentsSelect<T extends boolean = true> {
+  tenant?: T;
+  learner?: T;
+  course?: T;
+  status?: T;
+  enrolledAt?: T;
+  completedAt?: T;
+  lastActivityAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "lesson-progress_select".
+ */
+export interface LessonProgressSelect<T extends boolean = true> {
+  tenant?: T;
+  learner?: T;
+  course?: T;
+  lesson?: T;
+  completedAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "quiz-attempts_select".
+ */
+export interface QuizAttemptsSelect<T extends boolean = true> {
+  tenant?: T;
+  learner?: T;
+  course?: T;
+  quiz?: T;
+  score?: T;
+  passed?: T;
+  answers?: T;
+  submittedAt?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "certificates_select".
+ */
+export interface CertificatesSelect<T extends boolean = true> {
+  tenant?: T;
+  learner?: T;
+  course?: T;
+  serial?: T;
+  issuedAt?: T;
   updatedAt?: T;
   createdAt?: T;
 }

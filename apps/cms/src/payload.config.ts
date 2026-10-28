@@ -7,13 +7,16 @@ import { buildConfig } from 'payload'
 
 import { Categories } from './collections/Categories'
 import { Courses } from './collections/lms/Courses'
+import { Learners } from './collections/lms/Learners'
 import { Lessons } from './collections/lms/Lessons'
 import { Quizzes } from './collections/lms/Quizzes'
+import { Certificates, Enrolments, LessonProgress, QuizAttempts } from './collections/lms/records'
 import { Tenants } from './collections/lms/Tenants'
 import { Pages } from './collections/Pages'
 import { Posts } from './collections/Posts'
 import { Users } from './collections/Users'
 import { cloudflareLogger } from './lib/logger'
+import { lmsEndpoints } from './lms/endpoints'
 import { requestScopedPg } from './lib/request-scoped-pool'
 import { isWorkersRuntime } from './lib/runtime'
 
@@ -43,7 +46,22 @@ export default buildConfig({
     importMap: { baseDir: path.resolve(dirname) },
     meta: { titleSuffix: ' — CMS' },
   },
-  collections: [Users, Pages, Posts, Categories, Tenants, Courses, Lessons, Quizzes],
+  collections: [
+    Users,
+    Pages,
+    Posts,
+    Categories,
+    Tenants,
+    Courses,
+    Lessons,
+    Quizzes,
+    Learners,
+    Enrolments,
+    LessonProgress,
+    QuizAttempts,
+    Certificates,
+  ],
+  endpoints: lmsEndpoints,
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: { outputFile: path.resolve(dirname, 'payload-types.ts') },

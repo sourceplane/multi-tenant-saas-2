@@ -1,0 +1,23 @@
+apiVersion: orun.io/v1
+kind: TaskContract
+metadata:
+  name: LMS-4
+  title: "LMS3: learner records and the transactional services"
+spec:
+  goal: "Learners register, enrol, complete lessons, pass quizzes and receive a verifiable certificate on stage, every change made by a service in one transaction."
+  affects:
+    - "apps/cms/src/**"
+    - "apps/cms/payload-migrations/**"
+    - "apps/cms/docs/**"
+    - "packages/db/src/migrations/310_lms_learner_records/**"
+    - "packages/db/src/manifest.ts"
+    - "tests/cms/src/**"
+    - "tests/db/src/**"
+    - "tasks/LMS-4.TaskContract.yaml"
+  doneWhen:
+    - "the migration applies on stage and prod"
+    - "on stage, through the API alone: a learner registers, enrols in the sample course, completes its three lessons, passes its quiz, and GET /api/lms/certificates/<serial> verifies the certificate that was issued"
+    - "a failing quiz attempt does not complete the course; a second enrol is a no-op"
+  gates:
+    - "migrations 200-310 yield exactly the schema Payload pushes; 310 re-applies cleanly"
+    - "the local workerd learner journey passes, including 8 concurrent enrols (one enrolment) and the last requirements raced (one certificate), 10 of 10 rounds"

@@ -36,6 +36,24 @@ admins and the academy's own instructors. Instructors write only inside their
 academies; only admins delete courses or manage academies and accounts. The
 sample academy (migration 301) ships one published course, *Getting started*.
 
+**Learners** are their own accounts (`learners`, separate from staff: a learner
+can never reach `/admin`). Their records (`enrolments`, `lesson-progress`,
+`quiz-attempts`, `certificates`) are written only by the services below, each
+in one transaction; learners, instructors of the academy and admins can read
+them. Enrolled learners can read lesson bodies and quiz questions, never the
+answer key.
+
+| Service | What it does, in one transaction |
+|---|---|
+| `POST /api/lms/enrol {courseId}` | enrols in a published course of an open academy; a repeat returns the same enrolment |
+| `POST /api/lms/lessons/<id>/complete` | records the lesson (once), then completes the course if everything is done |
+| `POST /api/lms/quizzes/<id>/attempt {answers}` | scores on the server, records the attempt, then completes the course if everything is done |
+| `GET /api/lms/me` | the learner's courses, progress and certificates |
+| `GET /api/lms/certificates/<serial>` | public: who, which course, which academy, when |
+
+Completing a course sets the enrolment `completed` and issues exactly one
+certificate in the same transaction as the write that finished it.
+
 ## Depends on
 
 - **cloudflare-hyperdrive-cms**: its database path (cache disabled) and its

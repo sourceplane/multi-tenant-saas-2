@@ -11,6 +11,7 @@ import {
   tenantIdsOf,
   tenantStaff,
   tenantStaffField,
+  tenantStaffOrEnrolledField,
 } from '@cms/lib/lms-access'
 
 import { APIError } from './stubs/payload'
@@ -137,16 +138,16 @@ describe('answer keys and lesson bodies', () => {
     expect(field({ user: null, tenant: 't1' })).toBe(false)
   })
 
-  it('guard correctIndex, the questions, and lesson content and video', () => {
+  it('keep the answer key for staff; questions and lesson bodies for staff and enrolled learners', () => {
     const questions = Quizzes.fields.find((f) => 'name' in f && f.name === 'questions') as {
       access: { read: unknown }
       fields: Array<{ name: string; access?: { read: unknown } }>
     }
-    expect(questions.access.read).toBe(tenantStaffField)
+    expect(questions.access.read).toBe(tenantStaffOrEnrolledField)
     expect(questions.fields.find((f) => f.name === 'correctIndex')!.access!.read).toBe(tenantStaffField)
     for (const name of ['content', 'videoUrl']) {
       const f = Lessons.fields.find((x) => 'name' in x && x.name === name) as { access: { read: unknown } }
-      expect(f.access.read).toBe(tenantStaffField)
+      expect(f.access.read).toBe(tenantStaffOrEnrolledField)
     }
   })
 
@@ -161,5 +162,77 @@ describe('answer keys and lesson bodies', () => {
     expect(validate(3, { siblingData })).toMatch(/Pick one of the 3 options/)
     expect(validate(-1, { siblingData })).not.toBe(true)
     expect(validate(1.5, { siblingData })).not.toBe(true)
+  })
+})
+
+describe('learner records', () => {
+  // Imported lazily so the suite above stays about the course model.
+  const load = () => import('@cms/lib/lms-access')
+  const learner = { id: 'L1', collection: 'learners', name: 'Lee' }
+
+  it('records: admins all, instructors their academies, learners their own, strangers nothing', async () => {
+    const { ownOrTenantStaff } = await load()
+    expect(run(ownOrTenantStaff, withUser(admin))).toBe(true)
+    expect(run(ownOrTenantStaff, withUser(instructor))).toEqual({ tenant: { in: ['t1', 't2'] } })
+    expect(run(ownOrTenantStaff, withUser(learner))).toEqual({ learner: { equals: 'L1' } })
+    expect(run(ownOrTenantStaff, withUser(editor))).toBe(false)
+    expect(run(ownOrTenantStaff, withUser(null))).toBe(false)
+  })
+
+  it('asLearner recognises only learner sessions', async () => {
+    const { asLearner } = await load()
+    expect(asLearner(learner)).toBe(learner)
+    expect(asLearner(admin)).toBeUndefined()
+    expect(asLearner({ collection: 'learners' })).toBeUndefined()
+    expect(asLearner(null)).toBeUndefined()
+  })
+
+  it('lesson bodies open to an enrolled learner, once per request', async () => {
+    const { tenantStaffOrEnrolledField } = await load()
+    let finds = 0
+    const req = {
+      user: learner,
+      context: {},
+      payload: { find: async () => (finds++, { docs: [{ course: 'c1' }, { course: { id: 'c2' } }] }) },
+    }
+    const read = (course: unknown) => run(tenantStaffOrEnrolledField, { req, doc: { course, tenant: 't1' } })
+    await expect(read('c1')).resolves.toBe(true)
+    await expect(read({ id: 'c2' })).resolves.toBe(true)
+    await expect(read('c3')).resolves.toBe(false)
+    expect(finds).toBe(1)
+  })
+
+  it('stay closed to anonymous visitors and staff of other academies', async () => {
+    const { tenantStaffOrEnrolledField } = await load()
+    const req = (user: unknown) => ({ user, context: {}, payload: { find: async () => ({ docs: [] }) } })
+    await expect(run(tenantStaffOrEnrolledField, { req: req(null), doc: { course: 'c1', tenant: 't1' } })).resolves.toBe(false)
+    await expect(run(tenantStaffOrEnrolledField, { req: req(instructor), doc: { course: 'c1', tenant: 't9' } })).resolves.toBe(false)
+    await expect(run(tenantStaffOrEnrolledField, { req: req(instructor), doc: { course: 'c1', tenant: 't1' } })).resolves.toBe(true)
+  })
+})
+
+describe('who can read a learner account', () => {
+  const load = () => import('@cms/collections/lms/Learners')
+  const learner = { id: 'L1', collection: 'learners' }
+  const req = (user: unknown, enrolled: Array<{ learner: unknown }> = []) => ({
+    user,
+    payload: { find: async () => ({ docs: enrolled }) },
+  })
+
+  it('admins all; a learner only themself; strangers nobody', async () => {
+    const { learnerReaders } = await load()
+    await expect(run(learnerReaders, { req: req(admin) })).resolves.toBe(true)
+    await expect(run(learnerReaders, { req: req(learner) })).resolves.toEqual({ id: { equals: 'L1' } })
+    await expect(run(learnerReaders, { req: req(null) })).resolves.toBe(false)
+    await expect(run(learnerReaders, { req: req(editor) })).resolves.toBe(false)
+  })
+
+  it("instructors: the learners enrolled in their academies, and nobody else's", async () => {
+    const { learnerReaders } = await load()
+    await expect(run(learnerReaders, { req: req(instructor, [{ learner: 'L1' }, { learner: { id: 'L2' } }, { learner: 'L1' }]) })).resolves.toEqual({
+      id: { in: ['L1', 'L2'] },
+    })
+    await expect(run(learnerReaders, { req: req(instructor, []) })).resolves.toBe(false)
+    await expect(run(learnerReaders, { req: req(unassigned, [{ learner: 'L1' }]) })).resolves.toBe(false)
   })
 })

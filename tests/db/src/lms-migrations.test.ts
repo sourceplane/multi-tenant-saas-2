@@ -96,6 +96,44 @@ describe("LMS migrations", () => {
     });
   });
 
+  describe("310_lms_learner_records (generated)", () => {
+    const sql = read("310_lms_learner_records");
+
+    it("is registered after the sample academy", () => {
+      const ids = manifest.migrations.map((m) => m.id);
+      expect(ids.indexOf("310_lms_learner_records")).toBeGreaterThan(ids.indexOf("301_lms_sample_academy"));
+    });
+
+    it("creates the learner tables in schema cms", () => {
+      for (const table of ["learners", "learners_sessions", "enrolments", "lesson_progress", "quiz_attempts", "certificates"]) {
+        expect(sql).toContain(`CREATE TABLE IF NOT EXISTS "cms"."${table}" (`);
+      }
+    });
+
+    it("lets the database refuse duplicates: one enrolment, progress row and certificate each", () => {
+      expect(sql).toMatch(/CREATE UNIQUE INDEX IF NOT EXISTS "\w+" ON "cms"\."enrolments" USING btree \("learner_id","course_id"\)/);
+      expect(sql).toMatch(/CREATE UNIQUE INDEX IF NOT EXISTS "\w+" ON "cms"\."lesson_progress" USING btree \("learner_id","lesson_id"\)/);
+      expect(sql).toMatch(/CREATE UNIQUE INDEX IF NOT EXISTS "\w+" ON "cms"\."certificates" USING btree \("learner_id","course_id"\)/);
+      expect(sql).toMatch(/CREATE UNIQUE INDEX IF NOT EXISTS "\w+" ON "cms"\."certificates" USING btree \("serial"\)/);
+      expect(sql).toMatch(/CREATE UNIQUE INDEX IF NOT EXISTS "\w+" ON "cms"\."learners" USING btree \("email"\)/);
+    });
+
+    it("is idempotent statement by statement, and stays in schema cms", () => {
+      for (const stmt of statements(sql)) {
+        const ok =
+          stmt.startsWith("CREATE SCHEMA IF NOT EXISTS ") ||
+          stmt.startsWith("CREATE TABLE IF NOT EXISTS ") ||
+          /^CREATE (UNIQUE )?INDEX IF NOT EXISTS /.test(stmt) ||
+          /^ALTER TABLE "cms"\."\w+" ADD COLUMN IF NOT EXISTS /.test(stmt) ||
+          /^ALTER TYPE "cms"\."\w+" ADD VALUE IF NOT EXISTS /.test(stmt) ||
+          GUARDED_DO.test(stmt);
+        if (!ok) throw new Error(`not idempotent: ${stmt.split("\n")[0]}`);
+      }
+      expect(sql).not.toMatch(/\b(DROP|GRANT|RENAME)\b/i);
+      expect(sql).not.toMatch(/\b(public|identity|membership|billing|events|projects)\./);
+    });
+  });
+
   describe("301_lms_sample_academy (seed)", () => {
     const sql = read("301_lms_sample_academy");
     const stmts = statements(sql);
