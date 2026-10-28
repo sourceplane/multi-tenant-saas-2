@@ -6,6 +6,7 @@ import { createIdentityRepository } from "@saas/db/identity";
 import { createAuthService } from "../services/auth.js";
 import { errorResponse, extractBearerToken, validationError } from "../http.js";
 import { parsePageParams, encodeCursor } from "../pagination.js";
+import { parseUserPublicId } from "../ids.js";
 
 /** Secret-bearing metadata keys that must never appear in public responses. */
 const SENSITIVE_KEYS = new Set([
@@ -112,7 +113,13 @@ export async function handleSecurityEvents(
       return errorResponse(sessionResult.error, sessionResult.message, 401, requestId);
     }
 
-    const userId = sessionResult.user.id;
+    // The session names the user by public id (usr_<hex>); events are stored
+    // under the bare UUID (user_id is a UUID column), as every other handler
+    // that queries by user does.
+    const userId = parseUserPublicId(sessionResult.user.id);
+    if (!userId) {
+      return errorResponse("internal_error", "Invalid user ID format", 500, requestId);
+    }
     const { limit, cursor } = pageResult.value;
     const dbCursor = cursor ? { occurredAt: cursor.occurredAt, id: cursor.id } : null;
 

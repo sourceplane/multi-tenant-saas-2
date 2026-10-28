@@ -23,6 +23,20 @@ const nextConfig: NextConfig = {
   output: 'standalone',
   outputFileTracingRoot: path.join(dirname, '../..'),
   serverExternalPackages: ['jose', 'pg', 'pg-cloudflare'],
+  // Nobody frames the CMS (lumen-payload-console design §6): sibling Workers
+  // on the same workers.dev site get the Lax session cookie, so a framed
+  // admin page could be clicked through from one of them.
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          { key: 'Content-Security-Policy', value: "frame-ancestors 'self'" },
+          { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
+        ],
+      },
+    ]
+  },
   webpack: (webpackConfig) => {
     webpackConfig.resolve.extensionAlias = {
       '.cjs': ['.cts', '.cjs'],

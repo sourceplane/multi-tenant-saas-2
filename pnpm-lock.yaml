@@ -144,6 +144,9 @@ importers:
       '@cloudflare/workers-types':
         specifier: ^4.20250508.0
         version: 4.20260702.1
+      '@saas/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
       '@types/node':
         specifier: 22.19.9
         version: 22.19.9
@@ -804,6 +807,9 @@ importers:
 
   tests/cms:
     devDependencies:
+      '@saas/contracts':
+        specifier: workspace:*
+        version: link:../../packages/contracts
       '@saas/eslint-config':
         specifier: workspace:*
         version: link:../../tooling/eslint

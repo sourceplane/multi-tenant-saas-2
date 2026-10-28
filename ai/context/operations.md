@@ -177,8 +177,11 @@ through `api-edge`, and no worker calls it.
 - **Staff sign-in:** staff sign in to `/admin` with their Lumen account
   (emailed code, GitHub or Google); there are no staff passwords. A new staff
   account is *pending* until an admin gives it a role (`editor`, `instructor`
-  with its academies, or `admin`). Learners are separate accounts and sign in
-  to the academy at `/login` with their own email and password.
+  with its academies, or `admin`). Its *Account* nav group holds the Lumen
+  account pages: Profile, Security activity, Organization, Notifications and
+  Billing & plan (checkout and the customer portal are the payment provider's
+  pages). Learners are separate accounts and sign in to the academy at
+  `/login` with their own email and password.
 - **Schema:** `cms`, created and changed only by migrations `200`, `300`,
   `301`, `310` and `320` in the `db-migrate` lane. `301` seeds *Demo Academy* with the
   *Getting started* course; an admin may edit, unpublish or delete it.

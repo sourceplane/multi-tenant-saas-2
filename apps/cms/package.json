@@ -28,6 +28,7 @@
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^4.20250508.0",
+    "@saas/contracts": "workspace:*",
     "@types/node": "22.19.9",
     "@types/pg": "8.20.0",
     "@types/react": "19.2.14",

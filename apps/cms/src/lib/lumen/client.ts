@@ -6,7 +6,7 @@
 export type LumenTransport = (path: string, init: RequestInit) => Promise<Response>
 
 export type LumenResult<T> =
-  | { ok: true; status: number; data: T }
+  | { ok: true; status: number; data: T; cursor: string | null }
   | { ok: false; status: number; code: string; message: string }
 
 export type LumenUser = { id: string; email: string; displayName: string | null; lastOrgSlug?: string | null }
@@ -37,8 +37,8 @@ export async function lumenCall<T>(
     parsed = null
   }
   if (response.ok) {
-    const data = (parsed as { data?: T } | null)?.data
-    return { ok: true, status: response.status, data: (data ?? null) as T }
+    const envelope = parsed as { data?: T; meta?: { cursor?: string | null } } | null
+    return { ok: true, status: response.status, data: (envelope?.data ?? null) as T, cursor: envelope?.meta?.cursor ?? null }
   }
   const error = (parsed as { error?: { code?: string; message?: string } } | null)?.error
   return { ok: false, status: response.status, code: error?.code ?? 'error', message: error?.message ?? `HTTP ${response.status}` }

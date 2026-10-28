@@ -49,10 +49,23 @@ export default buildConfig({
     // (multi-tenant-saas-2-console design §1–§2): Payload's local strategy is
     // off on `users`. Learners keep their own sign-in in the academy.
     components: {
+      // The Lumen account pages (multi-tenant-saas-2-console LX2): Payload's
+      // account view becomes the Lumen profile, and the rest are custom views
+      // under an Account group in the nav.
+      afterNavLinks: ['/components/admin/account/AccountNav#AccountNav'],
       views: {
         login: { Component: '/components/admin/LumenLogin#LumenLogin' },
         unauthorized: { Component: '/components/admin/PendingAccess#PendingAccess' },
         logout: { Component: '/components/admin/LumenSignOut#LumenSignOut' },
+        account: { Component: '/components/admin/account/ProfileView#ProfileView' },
+        lumenSecurity: { Component: '/components/admin/account/SecurityView#SecurityView', path: '/account/security', exact: true },
+        lumenOrganization: { Component: '/components/admin/account/OrganizationView#OrganizationView', path: '/organization', exact: true },
+        lumenNotifications: {
+          Component: '/components/admin/account/NotificationsView#NotificationsView',
+          path: '/organization/notifications',
+          exact: true,
+        },
+        lumenBilling: { Component: '/components/admin/account/BillingView#BillingView', path: '/organization/billing', exact: true },
       },
     },
   },

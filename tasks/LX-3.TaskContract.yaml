@@ -1,0 +1,24 @@
+apiVersion: orun.io/v1
+kind: TaskContract
+metadata:
+  name: LX-3
+  title: "LX2: the Lumen account and billing pages in the Payload admin"
+spec:
+  goal: "Staff read and change their Lumen account from the Payload admin: Profile, Security activity, Organization, Notifications and Billing & plan, under an Account group in the nav, through api-edge with their own session."
+  affects:
+    - "apps/cms/**"
+    - "tests/cms/**"
+    - "apps/identity-worker/src/handlers/security-events.ts"
+    - "tests/identity-worker/src/security-events.test.ts"
+    - "apps/api-edge/src/rate-limit.ts"
+    - "apps/api-edge/src/auth-facade.ts"
+    - "tests/api-edge/src/rate-limit.test.ts"
+    - "pnpm-lock.yaml"
+    - "ai/context/operations.md"
+    - "specs/epics/multi-tenant-saas-2-console/IMPLEMENTATION-STATUS.md"
+    - "tasks/LX-3.TaskContract.yaml"
+  doneWhen:
+    - "on stage, the display name and a notification category change from the admin and read back through api-edge"
+    - "on stage, Security activity lists the sign-in, and Billing & plan shows the plan or explains that no provider is configured"
+    - "a pending or signed-out visitor cannot open the pages or post their forms"
+  gates: []

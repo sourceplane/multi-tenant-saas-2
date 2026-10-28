@@ -7,7 +7,7 @@ the code departed from `design.md`.
 |---|---|---|
 | LX0 — the spec | Merged | sourceplane/multi-tenant-saas-2#18 |
 | LX1 — staff sign-in | In review | — |
-| LX2 — account and billing | Not started | — |
+| LX2 — account and billing | In review | — |
 | LX3 — the front door | Not started | — |
 | LX4 — the record | Not started | — |
 
