@@ -11,6 +11,9 @@ const isUsersRow = (user: StaffUser): boolean => Boolean(user && (user.collectio
 
 export const roleOf = (user: StaffUser): Role | undefined => (user && isUsersRow(user) ? (user.role ?? undefined) : undefined)
 
+/** The Payload role of a request's user, or undefined (signed out, pending, or not a `users` row). */
+export const staffRoleOf = (user: unknown): Role | undefined => roleOf(user as StaffUser)
+
 export const anyone: Access = () => true
 // Boolean-only (not Access): Payload's `access.admin` must answer yes or no.
 export const isStaff = ({ req: { user } }: { req: PayloadRequest }): boolean => Boolean(roleOf(user as StaffUser))

@@ -28,6 +28,32 @@ sees "Waiting for access" until an admin opens *Users* and makes them an
 (an invitation) is linked on that person's first sign-in and keeps its role.
 Signing out (the admin's log-out button) revokes the Lumen session too.
 
+## Your account
+
+The admin's nav has an **Account** group: the same Lumen account pages the
+console had, for every staff role (a pending account sees none of them). Each
+page reads Lumen through `api-edge` with the person's own session when it
+loads; forms post to `/lumen/*` on the CMS, which calls `api-edge` and comes
+back to the page with *Saved.* or what went wrong.
+
+| Page | Path | Shows | Changes |
+|---|---|---|---|
+| Profile | `/admin/account` (Payload's account page, replaced) | email, CMS role, Lumen user id | display name (copied onto the `users` row) |
+| Security activity | `/admin/account/security` | sign-ins, codes and sessions, newest first, 50 a page | — |
+| Organization | `/admin/organization` | the Lumen organization (Solo: the personal one) | — (renaming is not in the API) |
+| Notifications | `/admin/organization/notifications` | email categories for that organization | which categories Lumen emails |
+| Billing & plan | `/admin/organization/billing` | the plan, its status and renewal, what it includes, invoices | upgrade (the provider's checkout), switch or cancel a paid plan, the provider's portal |
+
+Paying never happens in the CMS: *Upgrade* sends the browser to the payment
+provider's checkout, which returns to Billing & plan (`?checkout=complete`);
+the page then posts one reconcile, so it does not wait for the provider's
+webhook. *Manage payment and invoices* opens the provider's customer portal;
+it appears only for a paid subscription the provider manages. These are the
+staff member's own Lumen account and organization, not an academy's.
+
+A page that cannot reach Lumen says so (for example *The CMS could not reach
+Lumen*) instead of failing: check `api-edge` and the `LUMEN_API` binding.
+
 ## Open the admin (first admin)
 
 Nobody becomes an admin by signing in, except through setup, which the owner
@@ -150,6 +176,15 @@ Stage's `api-edge` accepts `http://127.0.0.1:<port>` and shows the emailed
 code on the sign-in page, so a local staff sign-in needs no inbox.
 
 ## Common failures
+
+- **Billing & plan says "no payment provider is configured".** The billing
+  worker of that environment has no provider credentials (stage, today), so
+  checkout and the portal cannot start; plans, entitlements and invoices
+  still show.
+- **An account page says "Lumen answered with an error (internal_error)".**
+  api-edge or the worker behind it failed; its logs carry the request id.
+  Security activity answered 503 for everyone until identity-worker queried
+  events by the user's UUID rather than its public `usr_` id (LX2).
 
 - **Smoke: `/health` answers 503.** The body names the part that failed, and
   the Worker's logs (observability is on) carry the error:

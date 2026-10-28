@@ -14,9 +14,12 @@ browser ──► multi-tenant-saas-2-cms-<env> (Worker)
               /health           liveness + db ┘              (cache disabled)
               /setup            opens first-admin setup (owner only)
               /auth/lumen/*     the staff Lumen session in, out, and the OAuth return
+              /admin/account…   the Lumen account pages (custom admin views)
+              /lumen/*          their forms
               /, /courses, …    the academy (learners sign in at /login)
                                      │
-                    lumen strategy ──┴──► LUMEN_API (service binding) ─► api-edge ─► identity
+        lumen strategy, account pages ──► LUMEN_API (service binding) ─► api-edge ─► identity,
+                                                                    membership, billing, notifications
 ```
 
 ## Bindings and secrets
@@ -53,13 +56,30 @@ browser ──► multi-tenant-saas-2-cms-<env> (Worker)
   `first-register` and password reset on `users` answer 403. The `lumen`
   strategy reads the `lumen_session` cookie, asks api-edge `GET /v1/auth/session`
   over the service binding (answers cached 30 s per token, keyed by its hash;
-  failures are not cached), and finds, links (by email) or creates the `users`
+  concurrent requests share one lookup; when api-edge cannot answer, a session
+  it confirmed in the last 5 minutes still stands until it expires, and an
+  unconfirmed one fails closed), and finds, links (by email) or creates the `users`
   row by `lumenUserId`. The token stays in the HttpOnly cookie: it is never on
   `req.user`, so the admin's browser code never sees it. A request that names
   another origin gets no staff user, so no other page can write through the API
   with the cookie, not even a sibling Worker on the same workers.dev site, which
-  SameSite does not separate. `/auth/lumen/session` takes a token only from a
+  SameSite does not separate. Every response also carries `frame-ancestors
+  'self'` (and `X-Frame-Options: SAMEORIGIN`), so no other page can frame the
+  admin and click through it. `/auth/lumen/session` takes a token only from a
   same-origin form post.
+- **The account pages are admin views over api-edge** (`src/components/admin/account/`,
+  `src/lib/lumen/account-api.ts`, `src/lib/lumen/billing-api.ts`,
+  `src/lib/lumen/forms.ts`). Payload's `account` view is replaced, so Payload
+  still keeps pending accounts out of it; the others are custom views, which
+  Payload does not guard, so each checks for a staff role itself (any of
+  admin, editor, instructor) and brings Payload's default template. They read
+  per request, uncached, with the person's own token, and render on the
+  server: the browser never calls api-edge for them. Forms post to `/lumen/*`
+  route handlers that accept only a same-origin post from staff and answer
+  `303` back to the page, or, for checkout and the customer portal, to the
+  payment provider's https page (the only external redirect). The console's
+  framework-free models (`src/lib/lumen/models/`) are copied, not shared: the
+  console is retired in LX3.
 - **Learners are untouched.** `learners` keep Payload's local strategy, their
   own email and password and the academy's `/login`; their session is a
   separate cookie. Payload asks the `users` strategy first, so in a browser
@@ -80,7 +100,6 @@ browser ──► multi-tenant-saas-2-cms-<env> (Worker)
 
 ## Out of scope here
 
-Lumen's account pages in the admin (LX2), the console URL opening the admin
-(LX3), learners signing in with Lumen, serving content through `api-edge`,
+The console URL opening the admin (LX3), learners signing in with Lumen, serving content through `api-edge`,
 per-tenant content, media uploads (waiting on an R2 token) and image
 derivatives (`sharp` does not run on Workers).

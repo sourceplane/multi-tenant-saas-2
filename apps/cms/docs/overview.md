@@ -23,6 +23,11 @@ at `/api/<collection>` and GraphQL at `/api/graphql`, over Postgres schema
 Published pages, posts and categories are readable by anyone through the API.
 Drafts, accounts and everything else need a staff session.
 
+The admin also has each staff member's **Lumen account pages** (Profile,
+Security activity, Organization, Notifications, Billing & plan), read from and
+saved to Lumen through `api-edge`; nothing of them is stored in the CMS but
+the display name.
+
 ### Learning (multi-tenant-saas-2-lms)
 
 - **tenants** (academies): name, slug, description, open or closed enrolment.
@@ -87,7 +92,8 @@ check the academy as a learner in another browser profile.
   `300_lms_course_model`, `301_lms_sample_academy`, `310_lms_learner_records`
   and `320_cms_lumen_identity`) before the CMS deploys.
 - **api-edge**: the CMS asks it, over a service binding, whose Lumen session a
-  staff request carries, and ends the session on sign-out. Its CORS lets the
+  staff request carries, ends the session on sign-out, and reads and changes
+  the account pages' data with the person's session. Its CORS lets the
   CMS's sign-in page call the auth routes, and identity-worker's OAuth return
   allowlist includes the CMS.
 
