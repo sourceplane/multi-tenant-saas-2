@@ -20,14 +20,14 @@ certificate, and an instructor can author the next course in `/admin`.
 
 | Field | Value |
 |-------|-------|
-| Status | Draft |
+| Status | Shipped (LMS0–LMS5) |
 | Cluster | **LMS** (LMS0–LMS5) |
 | Owner(s) | `apps/cms` (content, learner records, learner app) · `infra/terraform/cloudflare-hyperdrive-cms` · `packages/db` (schema, as migrations) |
 | Builds on | `lumen baseline-v32` for the fleet, and `sourceplane/lumen-payload`'s PC1–PC3 for the CMS layer |
 | Changes | Adds the CMS layer (three components, one migration) and the learning domain on top of it. No existing worker changes. |
 | Decisions locked | (1) One pooled Payload instance; tenancy by field and access rule. (2) Learner records are Payload collections on Postgres, so enrolment, completion and certification are **transactional**. (3) Learners sign in to the learner app itself, not through Lumen identity. (4) A course is complete when every lesson is done and every quiz is passed; completion issues the certificate in the same transaction. (5) Quizzes are scored on the server and correct answers never reach a learner. (6) Every service that changes progress serializes on the learner's enrolment row. |
 | Gate | LMS1 is the ported CMS. LMS2 is invisible to learners. LMS4 is the first learner-facing change. |
-| Shipped as | |
+| Shipped as | sourceplane/multi-tenant-saas-2#6 (spec), #7 (the CMS layer), #8 (course model), #9 (learner records), #10 (learner app), #11 (the record) |
 
 ## Read order
 

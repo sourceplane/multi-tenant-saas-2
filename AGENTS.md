@@ -19,15 +19,23 @@ is what deploys it.
    the workers. Every app has the same three pages: overview, architecture,
    runbook.
 5. `apps/web-console-next/docs/` — the console.
+6. `apps/cms/docs/` — the learning platform: how it deploys, how the owner
+   opens its admin and runs an academy, and how to change a collection (a
+   migration, never a push).
 
 ## Layout
 
 - `apps/api-edge` is public; the twelve `apps/*-worker` are reached only
   through it, over service bindings.
 - `apps/web-console-next` — Next.js on Workers + Static Assets.
+- `apps/cms` — the learning platform: Payload CMS on Workers (OpenNext),
+  public on its own hostname, beside the fleet: no worker calls it and the
+  edge does not route to it. Academies, courses, learners and their records
+  live in schema `cms`, changed only by migrations in `packages/db`.
 - `packages/*` — contracts, SDK, CLI, database harness, policy engine.
-- `infra/terraform/*` — Supabase, Hyperdrive, KV; `infra/db-migrate` — the
-  schema migrations.
+- `infra/terraform/*` — Supabase, Hyperdrive, KV, and the CMS's own
+  Hyperdrive (`cloudflare-hyperdrive-cms`); `infra/db-migrate` — the schema
+  migrations.
 - `tests/*` — one suite per component.
 
 ## How a change lands

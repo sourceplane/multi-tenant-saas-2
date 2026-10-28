@@ -74,3 +74,17 @@ Workers Free's 10 ms of CPU. The
 Cloudflare account this product shares with `lumen-payload` also hit Free's
 5-cron limit during the fleet bootstrap.
 
+
+## LMS-J — The first landing of a wiring source races across environments (FOUND, recovered)
+
+The CMS's `wrangler.template.jsonc` names both environments' Hyperdrive ids, so
+every CMS deploy's `wire-live` needs the wiring of stage **and** prod. But
+`dependsOn` orders only within one environment: `cms.stage` waits for
+`cloudflare-hyperdrive-cms.stage`, not for prod. This repository landed the
+whole CMS layer in one pull request (#7), so on its first main run the stage
+CMS lane resolved its secrets at 04:03:56, twelve seconds before the prod
+Hyperdrive apply published its wiring; the prod wiring was empty (it is an
+optional reference), `wire-live` stopped, and the prod CMS lane failed behind
+it. One re-run of the two failed lanes converged it, and it cannot recur here:
+both wirings now exist. A product built from this layer should land the
+Hyperdrive component before the CMS, as lumen-payload did.
