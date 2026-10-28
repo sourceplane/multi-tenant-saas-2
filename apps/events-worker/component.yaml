@@ -106,4 +106,4 @@ spec:
     layer: runtime
     surface: events
     runtime: cloudflare
-# orun: redeploy 04-workers as_174c1bfbb7904bf182a4
+# orun: redeploy 04-workers as_c778553f7ed74a0fa6ec
