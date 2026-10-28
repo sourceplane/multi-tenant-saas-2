@@ -1,0 +1,20 @@
+apiVersion: orun.io/v1
+kind: TaskContract
+metadata:
+  name: SEC-1
+  title: "identity-worker has no public URL"
+spec:
+  goal: "identity-worker answers only through its service bindings, like every other internal worker, so nobody can reach its header-trusting routes directly."
+  affects:
+    - "apps/identity-worker/wrangler.template.jsonc"
+    - "apps/identity-worker/docs/**"
+    - "tests/identity-worker/**"
+    - "tasks/SEC-1.TaskContract.yaml"
+  doneWhen:
+    - "every lane of the PR is green"
+    - "after the merge, the identity-worker workers.dev URL answers 404 on stage and prod, and sign-in through api-edge still works"
+  gates:
+    - "the rendered wrangler config sets workers_dev false for stage and prod"
+  envs:
+    - "stage"
+    - "prod"
