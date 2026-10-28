@@ -16,5 +16,5 @@ pnpm --filter @saas/cms-tests typecheck
   `CONVERTED` in `src/migration-sync.test.ts`.
 - **wrangler-config**: the template lost a binding, gained a committed id, or
   changed `main`/`assets` away from the OpenNext outputs.
-- **access / users-gate**: a collection's rules changed. If that was deliberate,
+- **access / users / lumen-***: a collection's rules or the sign-in changed. If that was deliberate,
   update the test together with `apps/cms/docs/architecture.md`.

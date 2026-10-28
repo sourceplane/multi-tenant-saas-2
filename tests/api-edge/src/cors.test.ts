@@ -1,5 +1,5 @@
 import { handlePreflight, applyCorsHeaders, isAllowedOrigin } from "@api-edge/cors";
-import { consoleWorkersDevOrigin } from "@api-edge/app-config";
+import { cmsWorkersDevOrigin, consoleWorkersDevOrigin } from "@api-edge/app-config";
 import type { Env } from "@api-edge/env";
 
 const stageEnv: Env = { ENVIRONMENT: "stage", CONSOLE_CUSTOM_DOMAIN: "stage.multi-tenant-saas-2.example.com" };
@@ -309,5 +309,40 @@ describe("api-edge cors", () => {
       expect(json).toEqual(body);
       expect(res.headers.get("access-control-allow-origin")).toBe("http://localhost:5173");
     });
+  });
+});
+
+// multi-tenant-saas-2-console LX1, after lumen-payload-console PX1: the Payload CMS signs people in from the
+// browser, so each environment's CMS origin is allowed in that environment
+// only, and its literal stays the CMS Worker's own name.
+describe("api-edge cors — the CMS origin", () => {
+  const cms = (env: string) => cmsWorkersDevOrigin(env);
+
+  it("is the CMS Worker's workers.dev origin", () => {
+    expect(cms("stage")).toBe("https://multi-tenant-saas-2-cms-stage.nexo-7be.workers.dev");
+  });
+
+  it("is allowed in its own environment", () => {
+    expect(isAllowedOrigin(cms("stage"), stageEnv)).toBe(true);
+    expect(isAllowedOrigin(cms("prod"), prodEnv)).toBe(true);
+  });
+
+  it("is refused in the other environment", () => {
+    expect(isAllowedOrigin(cms("prod"), stageEnv)).toBe(false);
+    expect(isAllowedOrigin(cms("stage"), prodEnv)).toBe(false);
+  });
+
+  it("does not widen to look-alikes", () => {
+    expect(isAllowedOrigin("https://multi-tenant-saas-2-cms-stage.nexo-7be.workers.dev.evil.example", stageEnv)).toBe(false);
+    expect(isAllowedOrigin("https://evil-multi-tenant-saas-2-cms-stage.nexo-7be.workers.dev", stageEnv)).toBe(false);
+    expect(isAllowedOrigin("http://multi-tenant-saas-2-cms-stage.nexo-7be.workers.dev", stageEnv)).toBe(false);
+  });
+
+  it("answers the browser's preflight with CORS headers", () => {
+    const res = handlePreflight(
+      new Request("https://api/v1/auth/login/start", { method: "OPTIONS", headers: { origin: cms("stage") } }),
+      stageEnv,
+    );
+    expect(res!.headers.get("access-control-allow-origin")).toBe(cms("stage"));
   });
 });

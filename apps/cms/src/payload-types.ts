@@ -165,8 +165,15 @@ export interface LearnerAuthOperations {
 export interface User {
   id: string;
   name?: string | null;
-  role: 'admin' | 'editor' | 'instructor';
+  /**
+   * Empty means pending: signed in with Lumen, but not let into the admin yet.
+   */
+  role?: ('admin' | 'editor' | 'instructor') | null;
   tenants?: (string | Tenant)[] | null;
+  /**
+   * Set on first Lumen sign-in.
+   */
+  lumenUserId?: string | null;
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -604,6 +611,7 @@ export interface UsersSelect<T extends boolean = true> {
   name?: T;
   role?: T;
   tenants?: T;
+  lumenUserId?: T;
   updatedAt?: T;
   createdAt?: T;
   email?: T;

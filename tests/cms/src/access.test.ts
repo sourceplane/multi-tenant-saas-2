@@ -2,7 +2,7 @@ import { Categories } from '@cms/collections/Categories'
 import { Pages } from '@cms/collections/Pages'
 import { Posts } from '@cms/collections/Posts'
 import { Users } from '@cms/collections/Users'
-import { adminOrSelf, anyone, isAdmin, isEditor, isStaff, publishedOrStaff } from '@cms/lib/access'
+import { adminOrSelf, anyone, isAdmin, isEditor, isStaff, publishedOrStaff, selfOrAdmin } from '@cms/lib/access'
 
 // The rules the CMS promises (design §3, Routes): published pages, posts and
 // categories are public; everything else needs a staff session; only admins
@@ -83,17 +83,19 @@ describe('collection contract', () => {
     expect(access(Categories).delete).toBe(isAdmin)
   })
 
-  it('users: staff-only admin panel, admin-managed accounts and academies, editor by default', () => {
+  it('users: staff-only admin panel, admin-managed accounts and academies, pending by default', () => {
     expect(Users.auth).toBeTruthy()
     expect(access(Users).admin).toBe(isStaff)
     expect(access(Users).create).toBe(isAdmin)
     expect(access(Users).delete).toBe(isAdmin)
-    expect(access(Users).read).toBe(adminOrSelf)
+    // Anyone signed in as staff reads their own account (a pending one too).
+    expect(access(Users).read).toBe(selfOrAdmin)
     expect(access(Users).update).toBe(adminOrSelf)
     const role = Users.fields.find((f) => 'name' in f && f.name === 'role') as Record<string, unknown> & {
       access: { create: unknown; update: unknown }
     }
-    expect(role.defaultValue).toBe('editor')
+    // No default: a new Lumen sign-in has no role, which means pending.
+    expect(role.defaultValue).toBeUndefined()
     expect(role.saveToJWT).toBe(true)
     // Only an admin may set or change a role: an editor cannot promote themself.
     expect(call(role.access.update, editor)).toBe(false)

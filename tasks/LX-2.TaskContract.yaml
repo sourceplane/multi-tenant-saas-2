@@ -1,0 +1,27 @@
+apiVersion: orun.io/v1
+kind: TaskContract
+metadata:
+  name: LX-2
+  title: "LX1: staff sign in to the Payload admin with Lumen"
+spec:
+  goal: "Staff (admin, editor, instructor) sign in to the Payload admin with their Lumen account, with no Payload passwords; a new account is pending until an admin gives it a role; learners keep their own accounts and sign-in."
+  affects:
+    - "apps/cms/**"
+    - "tests/cms/**"
+    - "apps/api-edge/src/app-config.ts"
+    - "apps/api-edge/src/cors.ts"
+    - "tests/api-edge/src/cors.test.ts"
+    - "apps/identity-worker/wrangler.template.jsonc"
+    - "tests/identity-worker/src/oauth-allowlist.test.ts"
+    - "packages/db/src/manifest.ts"
+    - "packages/db/src/migrations/320_cms_lumen_identity/**"
+    - "tests/db/src/cms-migration.test.ts"
+    - "ai/context/operations.md"
+    - "specs/epics/multi-tenant-saas-2-console/IMPLEMENTATION-STATUS.md"
+    - "tasks/LX-2.TaskContract.yaml"
+  doneWhen:
+    - "on stage and prod, /admin shows the Lumen sign-in, and password login and first-register answer 403"
+    - "on stage, a newcomer is pending, and with setup open the first Lumen sign-in becomes the admin"
+    - "an invited instructor signs in with Lumen and sees only the courses and learners of their academies"
+    - "a learner still registers and signs in at /login and completes the sample course"
+  gates: []
