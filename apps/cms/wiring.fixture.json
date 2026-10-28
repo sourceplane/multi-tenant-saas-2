@@ -1,0 +1,8 @@
+{
+  "cloudflare-hyperdrive-cms/stage": {
+    "hyperdrive_id": "00000000000000000000000000000011"
+  },
+  "cloudflare-hyperdrive-cms/prod": {
+    "hyperdrive_id": "00000000000000000000000000000013"
+  }
+}

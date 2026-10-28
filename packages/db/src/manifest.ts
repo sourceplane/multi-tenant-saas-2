@@ -183,5 +183,14 @@ export const manifest: MigrationManifest = {
       description:
         "Connection pointer on the inbound-delivery inbox (nullable connection_id + partial index) — lets the per-connection delivery log scope precisely; attributed by the IG2 cron drain",
     },
+    {
+      id: "200_cms_payload_core",
+      context: "cms",
+      path: "200_cms_payload_core/up.sql",
+      checksum:
+        "5fe6d89c4333fd286679af0372c96643d9afff111f10240b10bd130c95ef82fe",
+      description:
+        "Payload CMS schema (the lumen-payload-cms layer, ported by multi-tenant-saas-2-lms LMS1) — schema cms with staff users and sessions, pages and posts with drafts and versions, categories, and Payload's lock, preference and migration tables; generated from apps/cms/payload-migrations by scripts/payload-migration-to-sql.mjs",
+    },
   ],
 };

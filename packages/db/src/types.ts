@@ -15,6 +15,8 @@ export const BOUNDED_CONTEXTS = [
   "notifications",
   "support",
   "integrations",
+  // Payload CMS (apps/cms) — schema `cms`, written only by db-migrate.
+  "cms",
 ] as const;
 
 export type BoundedContext = (typeof BOUNDED_CONTEXTS)[number];

@@ -26,10 +26,13 @@ describe("Integrations Migration Verification", () => {
     );
   });
 
-  it("orders the integrations migrations at the manifest tail", () => {
+  it("orders the integrations migrations after 170, back to back", () => {
+    // Later contexts (cms at 200) append after them; what matters is that
+    // 180 and 190 apply in sequence once the membership seam (170) exists.
     const ids = manifest.migrations.map((m) => m.id);
-    expect(ids.indexOf("180_integrations_foundation")).toBe(ids.length - 2);
-    expect(ids.indexOf("190_integrations_delivery_attribution")).toBe(ids.length - 1);
+    const at180 = ids.indexOf("180_integrations_foundation");
+    expect(at180).toBeGreaterThan(ids.indexOf("170_membership_org_parent"));
+    expect(ids.indexOf("190_integrations_delivery_attribution")).toBe(at180 + 1);
   });
 
   it("manifest checksums match the on-disk up.sql files", () => {
