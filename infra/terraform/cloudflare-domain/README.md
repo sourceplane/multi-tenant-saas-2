@@ -47,7 +47,7 @@ vars) for runtime CORS decisions.
 |-----------|----------|-------------|
 | `baseDomain` | yes | Root domain (e.g. `multi-tenant-saas-2.example.com`) |
 | `zoneMode` | yes | `existing` or `managed` |
-| `workerNamePrefix` | yes | Worker name prefix (e.g. `multi-tenant-saas-2-web-console-next`); fully-qualified service name is `{workerNamePrefix}-{environment}` |
+| `workerNamePrefix` | yes | Worker name prefix (`multi-tenant-saas-2-cms`, the CMS: the academy and the staff admin); fully-qualified service name is `{workerNamePrefix}-{environment}` |
 | `stackName` | yes | Terraform stack identifier |
 | `terraformDir` | yes | Path to Terraform root |
 | `terraformVersion` | yes | Terraform CLI version |
@@ -83,9 +83,9 @@ After merge to main, verify:
 
 1. `terraform apply` succeeds in CI (`github-push-main` trigger).
 2. Workers custom domains show `active` status in Cloudflare (Workers → the
-   `multi-tenant-saas-2-web-console-next-{env}` Worker → Triggers → Custom Domains).
-3. `https://stage.multi-tenant-saas-2.example.com/` serves the stage console (web-console-next).
-4. `https://prod.multi-tenant-saas-2.example.com/` serves the prod console (web-console-next).
+   `multi-tenant-saas-2-cms-{env}` Worker → Triggers → Custom Domains).
+3. `https://stage.multi-tenant-saas-2.example.com/` serves the stage academy (the CMS; staff at `/admin`).
+4. `https://prod.multi-tenant-saas-2.example.com/` serves the prod academy (the CMS; staff at `/admin`).
 5. SSL certificates are provisioned (automatic via Cloudflare).
 
 ## Outputs

@@ -44,7 +44,7 @@ export default buildConfig({
   admin: {
     user: Users.slug,
     importMap: { baseDir: path.resolve(dirname) },
-    meta: { titleSuffix: ' — CMS' },
+    meta: { titleSuffix: ' — Multi Tenant Saas 2' },
     // Lumen sign-in replaces Payload's password views for staff
     // (multi-tenant-saas-2-console design §1–§2): Payload's local strategy is
     // off on `users`. Learners keep their own sign-in in the academy.
@@ -53,6 +53,7 @@ export default buildConfig({
       // account view becomes the Lumen profile, and the rest are custom views
       // under an Account group in the nav.
       afterNavLinks: ['/components/admin/account/AccountNav#AccountNav'],
+      graphics: { Logo: '/components/admin/Brand#Logo', Icon: '/components/admin/Brand#Icon' },
       views: {
         login: { Component: '/components/admin/LumenLogin#LumenLogin' },
         unauthorized: { Component: '/components/admin/PendingAccess#PendingAccess' },

@@ -1,25 +1,29 @@
 {
   "extends": "../../tooling/tsconfig/base.json",
   "compilerOptions": {
-    "lib": ["ES2022", "DOM"],
-    "jsx": "react-jsx",
+    "lib": [
+      "ES2022",
+      "DOM"
+    ],
+    "types": [
+      "jest"
+    ],
     "composite": false,
     "incremental": false,
     "declaration": false,
     "declarationMap": false,
+    "noEmit": true,
     "paths": {
-      "@/*": ["../../apps/web-console-next/src/*"],
-      "@web-console-next/*": ["../../apps/web-console-next/src/*"],
-      "@saas/contracts": ["../../packages/contracts/src/index.ts"],
-      "@saas/contracts/*": ["../../packages/contracts/src/*.ts"]
+      "@web-console-next/*": [
+        "../../apps/web-console-next/src/*"
+      ]
     }
   },
   "include": [
-    "src/**/*.ts",
-    "../../apps/web-console-next/src/components/ui/button.tsx",
-    "../../apps/web-console-next/src/components/webhooks/rotate-flow.ts",
-    "../../apps/web-console-next/src/components/webhooks/endpoint-crud.ts",
-    "../../apps/web-console-next/src/components/webhooks/delivery-history.ts"
+    "src/**/*.ts"
   ],
-  "exclude": ["node_modules", "dist"]
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
 }

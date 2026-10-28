@@ -7,8 +7,8 @@ into `.open-next/worker.js` plus `.open-next/assets`, deployed by the
 itself, so the composition's `wrangler deploy` ships the whole build.
 
 ```
-browser ──► multi-tenant-saas-2-cms-<env> (Worker)
-              /admin            Payload admin (React, server components)
+browser ──► multi-tenant-saas-2-cms-<env> (Worker)       ◄──308── multi-tenant-saas-2-web-console-next-<env> (the old console URL)
+              /admin            Payload admin (React, server components): the staff console
               /api/<collection> REST         ┐
               /api/graphql      GraphQL       ├─ payload ─► HYPERDRIVE_CMS ─► Supabase Postgres, schema cms
               /health           liveness + db ┘              (cache disabled)

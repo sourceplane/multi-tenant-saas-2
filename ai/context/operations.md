@@ -253,7 +253,6 @@ anyone's real domain). Nothing that uses the domain was removed; it waits:
 | `apps/api-edge/wrangler.template.jsonc` | `CONSOLE_CUSTOM_DOMAIN`, the console origin CORS allows besides the workers.dev one |
 | `apps/identity-worker/wrangler.template.jsonc` | `OAUTH_ALLOWED_CONSOLE_ORIGINS`, which lists the workers.dev console and CMS too, so sign-in works without a domain |
 | `apps/notifications-worker/wrangler.template.jsonc` | `EMAIL_FROM_ADDRESS`, `no-reply@mail.multi-tenant-saas-2.example.com` |
-| `apps/billing-worker/wrangler.template.jsonc` | `POLAR_SUCCESS_URL`, the fallback return after checkout |
 | `tests/api-edge` | the CORS fixtures, which follow the edge's config |
 
 To set it, in one PR:
