@@ -40,7 +40,16 @@ stage CMS for everything a pending or signed-out visitor can reach.
   activity answers 200 through api-edge and lists the sign-in (the
   identity-worker fix, which made it 503 for everyone before); 15 own-session
   reads in a row answer 200 (the `account` rate family).
-- **LX3, stage and prod:** LX3_RESULT
+- **LX3, stage and prod: 10/10 each.** The console URL's `/`, `/login`,
+  `/account`, `/orgs/<slug>/settings/billing?checkout=complete`,
+  `/orgs/<slug>/settings/notifications` and `/auth/callback?…` answer 308 to
+  `/admin`, `/admin/login`, `/admin/account`,
+  `/admin/organization/billing?checkout=complete`,
+  `/admin/organization/notifications` and `/auth/lumen/callback?…` (query
+  kept) on the same environment's CMS; following the console URL lands on the
+  staff sign-in, titled *Login — Multi Tenant Saas 2*; the CMS root still
+  renders the academy's catalogue. LX1's 12 checks were re-run after LX3 and
+  still pass on both.
 - **Prod, read-only:** `/health` ok, `/admin/login` renders the Lumen sign-in,
   staff password login answers 403, the catalogue renders. Prod's first admin
   waits for the owner.

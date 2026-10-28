@@ -276,8 +276,8 @@ To set it, in one PR:
    (dashboard; the platform does not create zones), then restore the
    `subscribe` block `infra/terraform/cloudflare-domain/component.yaml`
    carries commented out, and finish the provider-v5 custom-domain resource
-   its comments describe. Until then the console has no custom domain and
-   keeps its workers.dev URL.
+   its comments describe; the domain attaches to the CMS Worker. Until then
+   the CMS has no custom domain and keeps its workers.dev URL.
 3. **Verify the mail domain** — `mail.<your domain>` in Cloudflare Email
    Service (DKIM/SPF). The notifications worker sends from
    `no-reply@mail.<your domain>`; until it is verified, sends surface as
