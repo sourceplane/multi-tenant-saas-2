@@ -18,20 +18,28 @@ is what deploys it.
 4. `apps/api-edge/docs/` — the one public entry point and how it routes to
    the workers. Every app has the same three pages: overview, architecture,
    runbook.
-5. `apps/web-console-next/docs/` — the console.
-6. `apps/cms/docs/` — the learning platform: how it deploys, how the owner
+5. `apps/cms/docs/` — the learning platform, which is also the staff
+   console: the academy at `/`, the Payload admin at `/admin` with Lumen
+   sign-in and the account and billing pages, how it deploys, how the owner
    opens its admin and runs an academy, and how to change a collection (a
    migration, never a push).
+6. `apps/web-console-next/docs/` — the old console URL, now a redirect
+   Worker into the CMS.
 
 ## Layout
 
 - `apps/api-edge` is public; the twelve `apps/*-worker` are reached only
   through it, over service bindings.
-- `apps/web-console-next` — Next.js on Workers + Static Assets.
-- `apps/cms` — the learning platform: Payload CMS on Workers (OpenNext),
-  public on its own hostname, beside the fleet: no worker calls it and the
-  edge does not route to it. Academies, courses, learners and their records
-  live in schema `cms`, changed only by migrations in `packages/db`.
+- `apps/cms` — the product: Payload CMS on Workers (OpenNext), public on
+  its own hostname. The academy is its root, where learners sign in with
+  their own accounts. Its admin is the staff console: a Lumen account signs
+  in (no Payload passwords), and the account, organization, notifications,
+  security activity and billing pages call `api-edge` server to server over
+  the `LUMEN_API` service binding. No worker calls the CMS. Academies,
+  courses, learners and their records live in schema `cms`, changed only by
+  migrations in `packages/db`.
+- `apps/web-console-next` — a small redirect Worker: every old console
+  path answers 308 to its place in the same environment's CMS.
 - `packages/*` — contracts, SDK, CLI, database harness, policy engine.
 - `infra/terraform/*` — Supabase, Hyperdrive, KV, and the CMS's own
   Hyperdrive (`cloudflare-hyperdrive-cms`); `infra/db-migrate` — the schema

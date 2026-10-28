@@ -1,0 +1,20 @@
+apiVersion: orun.io/v1
+kind: TaskContract
+metadata:
+  name: LX-5
+  title: "LX4: the record — multi-tenant-saas-2-console shipped"
+spec:
+  goal: "The repository describes the product as it now runs: the CMS is the learning platform and the staff console, the old console URL redirects into it, and the epic's status reads shipped with each milestone's PR, its live verification and every departure from the design."
+  affects:
+    - "AGENTS.md"
+    - "README.md"
+    - "ai/context/operations.md"
+    - "apps/cms/docs/**"
+    - "apps/web-console-next/docs/**"
+    - "specs/epics/multi-tenant-saas-2-console/**"
+    - "tasks/LX-5.TaskContract.yaml"
+  doneWhen:
+    - "AGENTS.md, README.md and ai/context/operations.md name the CMS as the product and the staff console, and the console Worker as a redirect"
+    - "IMPLEMENTATION-STATUS.md lists LX0 to LX4 with their PRs and the stage and prod verification"
+    - "the epic README's status reads Shipped"
+  gates: []
