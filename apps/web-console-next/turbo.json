@@ -3,8 +3,7 @@
   "extends": ["//"],
   "tasks": {
     "build": {
-      "dependsOn": ["^build"],
-      "outputs": [".open-next/**", ".next/**", "!.next/cache/**"]
+      "outputs": ["dist/**"]
     }
   }
 }

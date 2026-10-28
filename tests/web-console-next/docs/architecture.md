@@ -1,6 +1,6 @@
 # web-console-next-tests — architecture
 
-A `turbo-package` component in `tests/web-console-next`, built and executed by the
-turbo pipeline. It consumes its target through the same workspace
-packages production code uses, so contract drift fails here first —
-before a deploy lane ever runs.
+Jest (ts-jest, ESM) over `apps/web-console-next/src/worker.ts`, imported as
+`@web-console-next/worker`. The Worker is pure (a URL in, a redirect out), so
+the tests call `redirectFor`, `cmsPath` and the default `fetch` directly; no
+Workers runtime is needed.

@@ -3,7 +3,7 @@ kind: Component
 
 metadata:
   name: cloudflare-domain
-  description: Manages the Cloudflare zone and attaches custom domains to environment-specific Worker services (web-console-next)
+  description: Manages the Cloudflare zone and attaches custom domains to environment-specific Worker services (the CMS, which is the console)
   labels:
     domain: infra
     scope: dns-and-custom-domains
@@ -26,7 +26,7 @@ spec:
     terraformVersion: "1.15.3"
     baseDomain: multi-tenant-saas-2.example.com
     zoneMode: existing
-    workerNamePrefix: multi-tenant-saas-2-web-console-next
+    workerNamePrefix: multi-tenant-saas-2-cms
     # NOTE: `CONSOLE_CUSTOM_DOMAIN` is intentionally NOT declared here.
     # It is supplied per-environment via
     # `environments.{dev,stage,prod}.parameterDefaults.terraform.CONSOLE_CUSTOM_DOMAIN`
@@ -42,7 +42,7 @@ spec:
     # `terraform/variables.tf`, so absence here is safe for dev.
 
   dependsOn:
-    - component: web-console-next
+    - component: cms
 
   # PARKED — no environment subscriptions, so no jobs are planned. The zone
   # this stack manages (baseDomain multi-tenant-saas-2.example.com) is not delegated to Cloudflare

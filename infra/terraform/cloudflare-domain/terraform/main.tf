@@ -104,8 +104,8 @@ variable "zoneMode" {
 
 variable "workerNamePrefix" {
   type        = string
-  default     = "multi-tenant-saas-2-web-console-next"
-  description = "Worker name prefix for the new console; full Worker service name is {prefix}-{environment}"
+  default     = "multi-tenant-saas-2-cms"
+  description = "Worker name prefix of the product (the Payload CMS: the academy and the staff admin); full Worker service name is {prefix}-{environment}"
 }
 
 variable "CONSOLE_CUSTOM_DOMAIN" {

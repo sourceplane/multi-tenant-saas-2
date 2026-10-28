@@ -1,6 +1,7 @@
 # cms
 
-Payload CMS on Cloudflare Workers: the admin panel at `/admin`, the REST API
+Payload CMS on Cloudflare Workers, and the product: the academy at `/`, the
+staff console (the admin panel) at `/admin`, which the old console URL opens, the REST API
 at `/api/<collection>` and GraphQL at `/api/graphql`, over Postgres schema
 `cms`, deployed beside the fleet as `multi-tenant-saas-2-cms-<env>`.
 

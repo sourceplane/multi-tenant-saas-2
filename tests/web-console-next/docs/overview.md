@@ -1,19 +1,11 @@
 # web-console-next-tests
 
-Verification suite for `web-console-next`.
+Verification suite for `web-console-next`, which is now only the old console
+URL redirecting to the Payload admin (multi-tenant-saas-2-console LX3, after lumen-payload-console PX4).
 
-A verify-only component: its lane runs this suite against `web-console-next` on every
-plan that includes it. Nothing deploys from here — a red lane blocks the
-convergence, which is the point.
+| Suite | The promise |
+|---|---|
+| `redirect` | Every old console page lands on its place in the same environment's CMS, query kept; the OAuth return goes to the CMS callback; only the console's own hosts are served (404 otherwise), so it cannot redirect anywhere else; answers are 308. |
 
-> **This suite does not run in CI today.** The component subscribes to `dev`
-> with the `quick-check` profile, which runs setup, install and a
-> package-structure check — and no tests. See
-> [docs/components/REVIEW.md](../../../docs/components/REVIEW.md); the fix is
-> one word (`verify`) and belongs in a change that can watch what it turns on.
-
-## Gates
-
-- `pnpm exec turbo run build --filter=./` — build
-- `pnpm exec turbo run typecheck --filter=./` — typecheck
-- `pnpm exec turbo run test --filter=./` — the suite itself
+The suite runs in `web-console-next`'s own build (its `buildCommand`), because
+this component's lane (`quick-check`) runs no tests.
