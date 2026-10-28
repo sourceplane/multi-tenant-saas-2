@@ -147,3 +147,49 @@ describe("CMS Lumen identity migration (320_cms_lumen_identity)", () => {
     expect(sql).not.toMatch(/\b(public|identity|membership|billing|events|projects)\./);
   });
 });
+
+describe("CMS media migration (330_cms_media)", () => {
+  const media = readFileSync(
+    resolve(MIGRATIONS_ROOT, "330_cms_media/up.sql"),
+    "utf-8",
+  );
+  const ids = manifest.migrations.map((m) => m.id);
+
+  it("is registered under the cms context, after the CMS core, the LMS records and the Lumen identity", () => {
+    expect(ids.indexOf("330_cms_media")).toBeGreaterThan(ids.indexOf("200_cms_payload_core"));
+    // Its academy column references cms.tenants (300).
+    expect(ids.indexOf("330_cms_media")).toBeGreaterThan(ids.indexOf("310_lms_learner_records"));
+    expect(ids.indexOf("330_cms_media")).toBeGreaterThan(ids.indexOf("320_cms_lumen_identity"));
+    expect(manifest.migrations.find((m) => m.id === "330_cms_media")!.context).toBe("cms");
+  });
+
+  it("creates the media table, keyed by uuid, with a unique filename", () => {
+    expect(media).toContain('CREATE TABLE IF NOT EXISTS "cms"."media" (');
+    expect(media).toMatch(/"id" uuid PRIMARY KEY/);
+    expect(media).toMatch(/CREATE UNIQUE INDEX IF NOT EXISTS "media_filename_idx" ON "cms"\."media" USING btree \("filename"\)/);
+  });
+
+  it("gives a file an optional academy, indexed, that survives the academy's deletion", () => {
+    expect(media).toMatch(/"tenant_id" uuid,/);
+    expect(media).toContain('REFERENCES "cms"."tenants"("id") ON DELETE set null');
+    expect(media).toContain('CREATE INDEX IF NOT EXISTS "media_tenant_idx" ON "cms"."media" USING btree ("tenant_id");');
+  });
+
+  it("adds media to Payload's document-lock relations", () => {
+    expect(media).toContain('ALTER TABLE "cms"."payload_locked_documents_rels" ADD COLUMN IF NOT EXISTS "media_id" uuid;');
+  });
+
+  it("is idempotent statement by statement, and stays in schema cms", () => {
+    for (const stmt of statements(media)) {
+      const ok =
+        stmt.startsWith("CREATE SCHEMA IF NOT EXISTS ") ||
+        stmt.startsWith("CREATE TABLE IF NOT EXISTS ") ||
+        /^CREATE (UNIQUE )?INDEX IF NOT EXISTS /.test(stmt) ||
+        /^ALTER TABLE "cms"\."\w+" ADD COLUMN IF NOT EXISTS /.test(stmt) ||
+        /^DO \$\$ BEGIN\n\s+(CREATE TYPE|ALTER TABLE \S+ ADD CONSTRAINT) [\s\S]*EXCEPTION WHEN duplicate_object THEN NULL;\nEND \$\$;$/.test(stmt);
+      if (!ok) throw new Error(`not idempotent: ${stmt.split("\n")[0]}`);
+    }
+    expect(media).not.toMatch(/\b(DROP|GRANT|RENAME)\b/i);
+    expect(media).not.toMatch(/\b(public|identity|membership|billing|events|projects)\./);
+  });
+});

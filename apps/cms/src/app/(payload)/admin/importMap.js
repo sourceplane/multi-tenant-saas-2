@@ -24,6 +24,7 @@ import { ItalicFeatureClient as ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0
 import { Icon as Icon_81fda60f3e3709e861f40982a767707d } from '../../../components/admin/Brand'
 import { Logo as Logo_81fda60f3e3709e861f40982a767707d } from '../../../components/admin/Brand'
 import { AccountNav as AccountNav_d70fd73be0c9b3a7c754123a7e679b3d } from '../../../components/admin/account/AccountNav'
+import { R2ClientUploadHandler as R2ClientUploadHandler_85cc02ed84006fcc91d3aff39dda669d } from '@payloadcms/storage-r2/client'
 import { LumenLogin as LumenLogin_7ffca7fd7bddfb9b50fd712bb1cc26c1 } from '../../../components/admin/LumenLogin'
 import { PendingAccess as PendingAccess_44e69ba3ff986b78d5b2450d962466d0 } from '../../../components/admin/PendingAccess'
 import { LumenSignOut as LumenSignOut_1a9f4ebe5bf28ed00539f5d97c7f7af6 } from '../../../components/admin/LumenSignOut'
@@ -62,6 +63,7 @@ export const importMap = {
   "/components/admin/Brand#Icon": Icon_81fda60f3e3709e861f40982a767707d,
   "/components/admin/Brand#Logo": Logo_81fda60f3e3709e861f40982a767707d,
   "/components/admin/account/AccountNav#AccountNav": AccountNav_d70fd73be0c9b3a7c754123a7e679b3d,
+  "@payloadcms/storage-r2/client#R2ClientUploadHandler": R2ClientUploadHandler_85cc02ed84006fcc91d3aff39dda669d,
   "/components/admin/LumenLogin#LumenLogin": LumenLogin_7ffca7fd7bddfb9b50fd712bb1cc26c1,
   "/components/admin/PendingAccess#PendingAccess": PendingAccess_44e69ba3ff986b78d5b2450d962466d0,
   "/components/admin/LumenSignOut#LumenSignOut": LumenSignOut_1a9f4ebe5bf28ed00539f5d97c7f7af6,

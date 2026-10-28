@@ -228,5 +228,14 @@ export const manifest: MigrationManifest = {
       description:
         "CMS staff sign in with Lumen (multi-tenant-saas-2-console LX1) — users gain lumen_user_id (unique, the link to identity.users) and role becomes optional with no default (no role means pending); learners are unchanged; generated from apps/cms/payload-migrations",
     },
+    {
+      id: "330_cms_media",
+      context: "cms",
+      path: "330_cms_media/up.sql",
+      checksum:
+        "980eb2d3431d1afef78a6e1e5ece6b244b11b7e6240c388bcc409e95b337957c",
+      description:
+        "CMS media (the lumen-payload-cms layer's PC4, ported by multi-tenant-saas-2-lms LMS6) — the media upload collection with alt text and an optional academy (tenants), its unique filename, and the lock table's media column; files themselves live in R2; generated from apps/cms/payload-migrations",
+    },
   ],
 };
