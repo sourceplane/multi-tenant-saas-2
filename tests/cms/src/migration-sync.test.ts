@@ -15,6 +15,7 @@ const converter = join(root, 'apps/cms/scripts/payload-migration-to-sql.mjs')
 
 const CONVERTED: Record<string, string> = {
   '20261027_203229_cms_payload_core.ts': '200_cms_payload_core',
+  '20261027_213624_lms_course_model.ts': '300_lms_course_model',
 }
 
 describe('Payload migrations ↔ db-migrate', () => {

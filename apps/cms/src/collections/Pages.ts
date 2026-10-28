@@ -1,13 +1,13 @@
 import type { CollectionConfig } from 'payload'
 
-import { isAdmin, isStaff, publishedOrStaff } from '../lib/access'
+import { isAdmin, isEditor, publishedOrStaff } from '../lib/access'
 import { slugField } from '../lib/slug'
 
 export const Pages: CollectionConfig = {
   slug: 'pages',
   admin: { useAsTitle: 'title', defaultColumns: ['title', 'slug', '_status', 'updatedAt'] },
   versions: { drafts: true, maxPerDoc: 25 },
-  access: { read: publishedOrStaff, create: isStaff, update: isStaff, delete: isAdmin },
+  access: { read: publishedOrStaff, create: isEditor, update: isEditor, delete: isAdmin },
   fields: [
     { name: 'title', type: 'text', required: true },
     slugField('title'),

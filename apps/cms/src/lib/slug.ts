@@ -18,12 +18,16 @@ const fromField =
     return typeof fallback === 'string' ? toSlug(fallback) : value
   }
 
-/** A unique, indexed slug derived from `source` unless an editor sets one. */
-export const slugField = (source = 'title'): Field => ({
+/**
+ * An indexed slug derived from `source` unless an editor sets one. Unique
+ * across the collection by default; pass `unique: false` where it is unique
+ * within a parent instead (a compound index on the collection).
+ */
+export const slugField = (source = 'title', { unique = true }: { unique?: boolean } = {}): Field => ({
   name: 'slug',
   type: 'text',
   required: true,
-  unique: true,
+  unique,
   index: true,
   admin: { position: 'sidebar', description: `Derived from the ${source} unless you set it.` },
   hooks: { beforeValidate: [fromField(source)] },

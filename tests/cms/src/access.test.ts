@@ -2,7 +2,7 @@ import { Categories } from '@cms/collections/Categories'
 import { Pages } from '@cms/collections/Pages'
 import { Posts } from '@cms/collections/Posts'
 import { Users } from '@cms/collections/Users'
-import { adminOrSelf, anyone, isAdmin, isStaff, publishedOrStaff } from '@cms/lib/access'
+import { adminOrSelf, anyone, isAdmin, isEditor, isStaff, publishedOrStaff } from '@cms/lib/access'
 
 // The rules the CMS promises (design §3, Routes): published pages, posts and
 // categories are public; everything else needs a staff session; only admins
@@ -15,6 +15,7 @@ const call = (fn: unknown, user: unknown) => as(fn)({ req: { user } })
 const anon = null
 const admin = { id: 'a1', collection: 'users', role: 'admin' }
 const editor = { id: 'e1', collection: 'users', role: 'editor' }
+const instructor = { id: 'i1', collection: 'users', role: 'instructor', tenants: ['t1'] }
 const foreign = { id: 'x1', collection: 'customers', role: 'admin' }
 
 describe('access rules', () => {
@@ -22,12 +23,20 @@ describe('access rules', () => {
     expect(call(anyone, anon)).toBe(true)
   })
 
-  it('isStaff: admins and editors of the users collection only', () => {
+  it('isStaff: any staff role of the users collection', () => {
     expect(call(isStaff, anon)).toBe(false)
     expect(call(isStaff, admin)).toBe(true)
     expect(call(isStaff, editor)).toBe(true)
+    expect(call(isStaff, instructor)).toBe(true)
     expect(call(isStaff, foreign)).toBe(false)
     expect(call(isStaff, { id: 'n', collection: 'users' })).toBe(false)
+  })
+
+  it('isEditor: admins and editors, not instructors', () => {
+    expect(call(isEditor, admin)).toBe(true)
+    expect(call(isEditor, editor)).toBe(true)
+    expect(call(isEditor, instructor)).toBe(false)
+    expect(call(isEditor, anon)).toBe(false)
   })
 
   it('isAdmin', () => {
@@ -58,23 +67,23 @@ describe('collection contract', () => {
   it.each([
     ['pages', Pages],
     ['posts', Posts],
-  ] as const)('%s: drafts and versions, published-only reads, staff writes, admin deletes', (slug, c) => {
+  ] as const)('%s: drafts and versions, published-only reads, editor writes, admin deletes', (slug, c) => {
     expect(c.slug).toBe(slug)
     expect(c.versions).toMatchObject({ drafts: true })
     expect(access(c).read).toBe(publishedOrStaff)
-    expect(access(c).create).toBe(isStaff)
-    expect(access(c).update).toBe(isStaff)
+    expect(access(c).create).toBe(isEditor)
+    expect(access(c).update).toBe(isEditor)
     expect(access(c).delete).toBe(isAdmin)
     expect(c.fields.map((f) => ('name' in f ? f.name : undefined))).toEqual(expect.arrayContaining(['title', 'slug', 'content']))
   })
 
-  it('categories: public reads, staff writes, admin deletes', () => {
+  it('categories: public reads, editor writes, admin deletes', () => {
     expect(access(Categories).read).toBe(anyone)
-    expect(access(Categories).create).toBe(isStaff)
+    expect(access(Categories).create).toBe(isEditor)
     expect(access(Categories).delete).toBe(isAdmin)
   })
 
-  it('users: staff-only admin panel, admin-managed accounts, editor by default', () => {
+  it('users: staff-only admin panel, admin-managed accounts and academies, editor by default', () => {
     expect(Users.auth).toBeTruthy()
     expect(access(Users).admin).toBe(isStaff)
     expect(access(Users).create).toBe(isAdmin)
@@ -90,5 +99,12 @@ describe('collection contract', () => {
     expect(call(role.access.update, editor)).toBe(false)
     expect(call(role.access.update, admin)).toBe(true)
     expect(call(role.access.create, anon)).toBe(false)
+    const tenants = Users.fields.find((f) => 'name' in f && f.name === 'tenants') as Record<string, unknown> & {
+      access: { update: unknown }
+    }
+    expect(tenants).toMatchObject({ type: 'relationship', relationTo: 'tenants', hasMany: true })
+    // An instructor cannot widen their own academies.
+    expect(call(tenants.access.update, instructor)).toBe(false)
+    expect(call(tenants.access.update, admin)).toBe(true)
   })
 })

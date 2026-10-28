@@ -1,9 +1,12 @@
 import type { Access, FieldAccess, PayloadRequest } from 'payload'
 
-type Role = 'admin' | 'editor'
-type StaffUser = { collection?: string; role?: Role } | null | undefined
+// Staff roles. `editor` manages the site's pages and posts; `instructor`
+// manages the courses of the academies (tenants) assigned to them; `admin`
+// manages everything, including accounts and academies.
+export type Role = 'admin' | 'editor' | 'instructor'
+export type StaffUser = { id?: string; collection?: string; role?: Role; tenants?: unknown } | null | undefined
 
-const roleOf = (user: StaffUser): Role | undefined =>
+export const roleOf = (user: StaffUser): Role | undefined =>
   user && (user.collection === undefined || user.collection === 'users') ? user.role : undefined
 
 export const anyone: Access = () => true
@@ -11,14 +14,19 @@ export const anyone: Access = () => true
 export const isStaff = ({ req: { user } }: { req: PayloadRequest }): boolean => Boolean(roleOf(user as StaffUser))
 export const isAdmin: Access = ({ req: { user } }) => roleOf(user as StaffUser) === 'admin'
 export const isAdminField: FieldAccess = ({ req: { user } }) => roleOf(user as StaffUser) === 'admin'
+/** Admins and editors: the site's pages, posts and categories. */
+export const isEditor: Access = ({ req: { user } }) => {
+  const role = roleOf(user as StaffUser)
+  return role === 'admin' || role === 'editor'
+}
 
 /** Staff see drafts; everyone else sees what is published. */
 export const publishedOrStaff: Access = ({ req: { user } }) =>
   roleOf(user as StaffUser) ? true : { _status: { equals: 'published' } }
 
-/** Admins manage every account; an editor reads and edits their own. */
+/** Admins manage every account; other staff read and edit their own. */
 export const adminOrSelf: Access = ({ req: { user } }) => {
-  const u = user as (StaffUser & { id?: string }) | null
+  const u = user as StaffUser
   if (roleOf(u) === 'admin') return true
   if (u?.id && roleOf(u)) return { id: { equals: u.id } }
   return false
