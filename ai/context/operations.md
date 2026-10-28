@@ -20,11 +20,14 @@ component-native desired-state repo:
 - **`apps/*-worker`** — bounded-context Workers (identity, membership,
   projects, policy, config, events, webhooks, metering, billing,
   notifications, …). Never public; reached only through the edge.
-- **`apps/web-console-next`** — the console UI, Next.js on Workers +
-  Static Assets, configured against the edge.
+- **`apps/web-console-next`** — the old console URL, now a redirect
+  Worker: every path answers 308 to its place in the same environment's
+  CMS (`/auth/callback` to `/auth/lumen/callback`).
 - **`apps/cms`** — the learning platform: Payload CMS on Workers (OpenNext),
   its own public Worker beside the fleet. The catalogue and learner pages at
-  `/`, the admin at `/admin`, the learner API at `/api/lms`. See
+  `/`, the learner API at `/api/lms`, and the staff console at `/admin`:
+  the Payload admin, signed in with a Lumen account, with the account,
+  organization, notifications, security-activity and billing pages. See
   [The learning platform](#the-learning-platform-appscms).
 - **`infra/terraform/*`** — data plane: Supabase projects (stage/prod),
   Cloudflare Hyperdrive, idempotency KV, and the CMS's own cache-disabled
@@ -152,7 +155,10 @@ Academies publish courses; learners enrol, work through lessons and quizzes,
 and earn certificates anyone can verify. It is one Payload CMS 3.89 instance
 on Workers (OpenNext), deployed as `multi-tenant-saas-2-cms-<env>` on stage
 and prod, beside the fleet rather than inside it: nothing routes to it
-through `api-edge`, and no worker calls it.
+through `api-edge`, and no worker calls it. It calls the edge, server to
+server over its `LUMEN_API` service binding, for staff sign-in and the
+account pages; the old console URL (`multi-tenant-saas-2-web-console-next-<env>`)
+answers 308 into it.
 
 | Surface | Who | What |
 |---|---|---|
@@ -270,8 +276,8 @@ To set it, in one PR:
    (dashboard; the platform does not create zones), then restore the
    `subscribe` block `infra/terraform/cloudflare-domain/component.yaml`
    carries commented out, and finish the provider-v5 custom-domain resource
-   its comments describe. Until then the console has no custom domain and
-   keeps its workers.dev URL.
+   its comments describe; the domain attaches to the CMS Worker. Until then
+   the CMS has no custom domain and keeps its workers.dev URL.
 3. **Verify the mail domain** — `mail.<your domain>` in Cloudflare Email
    Service (DKIM/SPF). The notifications worker sends from
    `no-reply@mail.<your domain>`; until it is verified, sends surface as

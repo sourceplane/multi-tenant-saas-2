@@ -4,8 +4,10 @@
 and Supabase Postgres, run as an [Orun](https://github.com/sourceplane/orun)
 component-native desired-state repo. Identity, organizations, projects, RBAC,
 audit, metering, billing, webhooks and notifications are separate
-bounded-context Workers behind one public edge API, with a Next.js console on
-Workers + Static Assets.
+bounded-context Workers behind one public edge API. The product is a learning
+platform on Payload CMS: academies publish courses at its root, and its admin
+is the staff console, where a Lumen account signs in and the account,
+organization, notifications and billing pages live.
 
 ## Live deployment
 
@@ -29,7 +31,8 @@ what not to touch.
 |---|---|
 | `apps/api-edge` | The one public HTTP entry point; reaches the workers over service bindings |
 | `apps/*-worker` | Twelve bounded-context Workers — identity, membership, projects, policy, events, config, metering, billing, notifications, webhooks, integrations, admin. Never public |
-| `apps/web-console-next` | The console: Next.js on Workers + Static Assets, configured against the edge |
+| `apps/cms` | The product: the learning platform on Payload CMS (OpenNext on Workers). Academies and their catalogue at `/`, learners with their own accounts; the admin at `/admin` is the staff console, signed in with a Lumen account, with the account and billing pages calling the edge server to server |
+| `apps/web-console-next` | The old console URL, now a redirect Worker: every path answers 308 to its place in the CMS |
 | `packages/*` | Shared libraries: contracts, SDK, CLI, the database harness, the policy engine, the notifications client, the webhook verifier |
 | `infra/terraform/*` | The data plane: Supabase projects, Hyperdrive, the edge's idempotency KV, and the custom-domain component (parked until a domain is set) |
 | `infra/db-migrate` | Database migrations — planned on pull requests, applied on merge |
