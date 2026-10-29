@@ -30,7 +30,10 @@
       ],
       // Lumen staff sign-in (multi-tenant-saas-2-console design §1): sessions
       // are checked with api-edge over this binding, never over the internet.
-      "services": [{ "binding": "LUMEN_API", "service": "multi-tenant-saas-2-api-edge-stage" }]
+      "services": [{ "binding": "LUMEN_API", "service": "multi-tenant-saas-2-api-edge-stage" }],
+      "r2_buckets": [
+        { "binding": "R2_MEDIA", "bucket_name": "@@wiring(cloudflare-r2-cms/stage:bucket_name)@@" }
+      ]
     },
     "prod": {
       "vars": {
@@ -42,7 +45,10 @@
       ],
       // Lumen staff sign-in (multi-tenant-saas-2-console design §1): sessions
       // are checked with api-edge over this binding, never over the internet.
-      "services": [{ "binding": "LUMEN_API", "service": "multi-tenant-saas-2-api-edge-prod" }]
+      "services": [{ "binding": "LUMEN_API", "service": "multi-tenant-saas-2-api-edge-prod" }],
+      "r2_buckets": [
+        { "binding": "R2_MEDIA", "bucket_name": "@@wiring(cloudflare-r2-cms/prod:bucket_name)@@" }
+      ]
     }
   }
 }
