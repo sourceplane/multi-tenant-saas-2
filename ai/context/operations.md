@@ -20,11 +20,14 @@ component-native desired-state repo:
 - **`apps/*-worker`** — bounded-context Workers (identity, membership,
   projects, policy, config, events, webhooks, metering, billing,
   notifications, …). Never public; reached only through the edge.
-- **`apps/web-console-next`** — the console UI, Next.js on Workers +
-  Static Assets, configured against the edge.
+- **`apps/web-console-next`** — the old console URL, now a redirect
+  Worker: every path answers 308 to its place in the same environment's
+  CMS (`/auth/callback` to `/auth/lumen/callback`).
 - **`apps/cms`** — the learning platform: Payload CMS on Workers (OpenNext),
   its own public Worker beside the fleet. The catalogue and learner pages at
-  `/`, the admin at `/admin`, the learner API at `/api/lms`. See
+  `/`, the learner API at `/api/lms`, and the staff console at `/admin`:
+  the Payload admin, signed in with a Lumen account, with the account,
+  organization, notifications, security-activity and billing pages. See
   [The learning platform](#the-learning-platform-appscms).
 - **`infra/terraform/*`** — data plane: Supabase projects (stage/prod),
   Cloudflare Hyperdrive, idempotency KV, and the CMS's own cache-disabled
@@ -152,7 +155,10 @@ Academies publish courses; learners enrol, work through lessons and quizzes,
 and earn certificates anyone can verify. It is one Payload CMS 3.89 instance
 on Workers (OpenNext), deployed as `multi-tenant-saas-2-cms-<env>` on stage
 and prod, beside the fleet rather than inside it: nothing routes to it
-through `api-edge`, and no worker calls it.
+through `api-edge`, and no worker calls it. It calls the edge, server to
+server over its `LUMEN_API` service binding, for staff sign-in and the
+account pages; the old console URL (`multi-tenant-saas-2-web-console-next-<env>`)
+answers 308 into it.
 
 | Surface | Who | What |
 |---|---|---|
@@ -160,7 +166,7 @@ through `api-edge`, and no worker calls it.
 | `/courses/<academy>/<course>` | anyone | a course's outline; enrol from here |
 | `/learn/…`, `/me` | signed-in learners | lessons, quizzes, progress, certificates |
 | `/certificates/<serial>` | anyone | verifies a certificate (name, course, academy, date) |
-| `/admin` | staff | academies, courses, lessons, quizzes, learners, site pages |
+| `/admin` | staff, signed in with their Lumen account | academies, courses, lessons, quizzes, learners, site pages |
 | `/api/lms/*` | learners (certificates: anyone) | enrol, complete a lesson, attempt a quiz, my learning, verify |
 
 - **Tenancy:** every course, lesson, quiz and learner record belongs to one
@@ -174,8 +180,16 @@ through `api-edge`, and no worker calls it.
 - **Database path:** its own Hyperdrive config, `multi-tenant-saas-2-cms-<env>`
   (`infra/terraform/cloudflare-hyperdrive-cms`), with query caching disabled.
   Each query or transaction opens its own client; Hyperdrive pools.
-- **Schema:** `cms`, created and changed only by migrations `200`, `300`, `301`
-  and `310` in the `db-migrate` lane. `301` seeds *Demo Academy* with the
+- **Staff sign-in:** staff sign in to `/admin` with their Lumen account
+  (emailed code, GitHub or Google); there are no staff passwords. A new staff
+  account is *pending* until an admin gives it a role (`editor`, `instructor`
+  with its academies, or `admin`). Its *Account* nav group holds the Lumen
+  account pages: Profile, Security activity, Organization, Notifications and
+  Billing & plan (checkout and the customer portal are the payment provider's
+  pages). Learners are separate accounts and sign in to the academy at
+  `/login` with their own email and password.
+- **Schema:** `cms`, created and changed only by migrations `200`, `300`,
+  `301`, `310` and `320` in the `db-migrate` lane. `301` seeds *Demo Academy* with the
   *Getting started* course; an admin may edit, unpublish or delete it.
 - **Secrets:** `CMS_PAYLOAD_SECRET` is generated and published by
   `cloudflare-hyperdrive-cms` and pushed to the Worker as `PAYLOAD_SECRET`.
@@ -183,30 +197,33 @@ through `api-edge`, and no worker calls it.
 
 ### Open the admin (once per environment)
 
-The admin ships **closed**: the first account can only be created through a
-setup token the owner chooses. The full steps, and how to run an academy
-after that, are in [`apps/cms/docs/runbook.md`](../../apps/cms/docs/runbook.md):
+Staff sign in with their **Lumen account**; a new account waits, *pending*,
+until an admin gives it a role in *Users*. The **first admin** needs a setup
+token the owner chooses. The full steps, and how to run an academy after
+that, are in [`apps/cms/docs/runbook.md`](../../apps/cms/docs/runbook.md):
 
 ```bash
 orun secrets set CMS_SETUP_TOKEN --org <ws> --env stage   # a token of 16+ characters; it prompts
-# merge any change to apps/cms (or re-run its lane) so the deploy pushes it, or:
+# merge any change under apps/cms so its next deploy from main pushes it (a re-run or a dispatch does not deploy), or:
 #   pnpm --filter @saas/cms exec wrangler secret put CMS_SETUP_TOKEN --name multi-tenant-saas-2-cms-stage
 # then visit https://multi-tenant-saas-2-cms-stage.<subdomain>.workers.dev/setup?token=<token>
 ```
 
-That first account is an admin; admins create instructors and editors.
-Learners register themselves at `/register`.
+The visit sets a 15-minute cookie and opens the Lumen sign-in. While no admin
+exists, whoever signs in with that cookie becomes the admin; afterwards admins
+invite instructors and editors by email (or give a pending account its role),
+and the token can be deleted. Learners register themselves at `/register`.
 
 ### Verify it
 
 ```bash
 B=https://multi-tenant-saas-2-cms-stage.<subdomain>.workers.dev
 curl -fsS $B/health                                   # {"status":"ok","db":"ok"}
-curl -s -o /dev/null -w '%{http_code}\n' $B/admin      # 200
+curl -s -o /dev/null -w '%{http_code}\n' $B/admin      # 200, the Lumen staff sign-in
 curl -s $B/ | grep -o 'data-page="catalogue"'         # the catalogue renders
 curl -fsS "$B/api/courses?depth=0" | head -c 200       # published courses, anonymously
 curl -s -o /dev/null -w '%{http_code}\n' -X POST $B/api/users/first-register \
-  -H content-type:application/json -d '{"email":"x@example.com","password":"x"}'   # 403 until setup is opened
+  -H content-type:application/json -d '{"email":"x@example.com","password":"x"}'   # 403: no staff passwords
 ```
 
 The CMS lane's smoke check asserts `/health`, `/admin` and the catalogue
@@ -240,9 +257,8 @@ anyone's real domain). Nothing that uses the domain was removed; it waits:
 | `intent.yaml` | `BASE_DOMAIN` (every environment) and `CONSOLE_CUSTOM_DOMAIN` (`stage.multi-tenant-saas-2.example.com`, `prod.multi-tenant-saas-2.example.com`) — the parameters of the parked `infra/terraform/cloudflare-domain` |
 | `infra/terraform/cloudflare-domain` | `baseDomain` in its `component.yaml`, the Terraform variable's default, its README |
 | `apps/api-edge/wrangler.template.jsonc` | `CONSOLE_CUSTOM_DOMAIN`, the console origin CORS allows besides the workers.dev one |
-| `apps/identity-worker/wrangler.template.jsonc` | `OAUTH_ALLOWED_CONSOLE_ORIGINS`, which lists the workers.dev console too, so sign-in works without a domain |
+| `apps/identity-worker/wrangler.template.jsonc` | `OAUTH_ALLOWED_CONSOLE_ORIGINS`, which lists the workers.dev console and CMS too, so sign-in works without a domain |
 | `apps/notifications-worker/wrangler.template.jsonc` | `EMAIL_FROM_ADDRESS`, `no-reply@mail.multi-tenant-saas-2.example.com` |
-| `apps/billing-worker/wrangler.template.jsonc` | `POLAR_SUCCESS_URL`, the fallback return after checkout |
 | `tests/api-edge` | the CORS fixtures, which follow the edge's config |
 
 To set it, in one PR:
@@ -260,8 +276,8 @@ To set it, in one PR:
    (dashboard; the platform does not create zones), then restore the
    `subscribe` block `infra/terraform/cloudflare-domain/component.yaml`
    carries commented out, and finish the provider-v5 custom-domain resource
-   its comments describe. Until then the console has no custom domain and
-   keeps its workers.dev URL.
+   its comments describe; the domain attaches to the CMS Worker. Until then
+   the CMS has no custom domain and keeps its workers.dev URL.
 3. **Verify the mail domain** — `mail.<your domain>` in Cloudflare Email
    Service (DKIM/SPF). The notifications worker sends from
    `no-reply@mail.<your domain>`; until it is verified, sends surface as

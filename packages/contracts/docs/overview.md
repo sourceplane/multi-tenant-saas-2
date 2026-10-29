@@ -13,6 +13,8 @@ below at build time.
 - **api-edge-tests**
 - **billing-worker** — Cloudflare Worker for the Billing API surface (private, service-binding only)
 - **billing-worker-tests**
+- **cms** — the learning platform and staff console (Payload CMS on Workers)
+- **cms-tests**
 - **config-worker** — Cloudflare Worker for the Config read-only API surface
 - **config-worker-tests**
 - **contracts-tests**
@@ -37,6 +39,4 @@ below at build time.
 - **projects-worker-tests**
 - **sdk** — Runtime-agnostic TypeScript SDK for the Multi Tenant Saas 2 control plane API
 - **testing**
-- **web-console-next** — Next.js 15 + opennextjs/cloudflare delivery of the Multi Tenant Saas 2 web console (per-environment, Workers + Static Assets)
-- **web-console-next-tests**
 - **webhooks-worker** — Cloudflare Worker for webhook endpoint, subscription, and delivery-attempt management

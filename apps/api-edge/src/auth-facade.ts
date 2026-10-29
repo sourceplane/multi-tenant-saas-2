@@ -2,6 +2,7 @@ import type { Env } from "./env";
 import { errorResponse } from "./http";
 import { replayOrExecute } from "./idempotency";
 import { cacheApiStore, bearerToken } from "./actor-cache";
+import type { RouteFamily } from "./rate-limit";
 
 const LOGOUT_PATH = "/v1/auth/logout";
 
@@ -44,6 +45,19 @@ const FORWARDED_HEADERS = [
   "cookie",
 ];
 
+/** Routes a signed-in person uses for their own account: rate-limited as `account`, not `auth`. */
+const ACCOUNT_ROUTES = new Set(["/v1/auth/session", "/v1/auth/profile", "/v1/auth/security-events"]);
+
+/**
+ * The rate-limit family of an auth route: `account` for a bearer reading its
+ * own session, profile or security events (or saving its profile), `auth`
+ * for everything else — sign-in, OAuth, logout and anonymous calls.
+ */
+export function authRouteFamily(request: Request, pathname: string): RouteFamily {
+  if (!ACCOUNT_ROUTES.has(pathname)) return "auth";
+  return bearerToken(request.headers.get("authorization")) ? "account" : "auth";
+}
+
 export function isAuthRoute(pathname: string): boolean {
   return pathname in AUTH_ROUTES || pathname in AUTH_MULTI_METHOD_ROUTES || isOAuthRoute(pathname);
 }
@@ -72,7 +86,7 @@ export async function handleAuthRoute(
     return errorResponse("unsupported", "Method not allowed", 405, requestId);
   }
 
-  return replayOrExecute(request, requestId, env, "auth", async () => {
+  return replayOrExecute(request, requestId, env, authRouteFamily(request, pathname), async () => {
     if (!env.IDENTITY_WORKER) {
       return errorResponse(
         "internal_error",

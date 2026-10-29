@@ -1,15 +1,5 @@
-# Next.js build output
-.next/
-out/
-
-# OpenNext / @opennextjs/cloudflare build output
-.open-next/
-
-# Local env files
-.env*.local
+# Build output
+dist/
 
 # Wrangler local state
 .wrangler/
-
-# TS build info
-*.tsbuildinfo

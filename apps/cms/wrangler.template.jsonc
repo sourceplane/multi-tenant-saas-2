@@ -15,19 +15,34 @@
   "vars": { "ENVIRONMENT": "local" },
   "env": {
     "dev": {
-      "vars": { "ENVIRONMENT": "dev" }
+      "vars": {
+        "ENVIRONMENT": "dev",
+        "LUMEN_API_PUBLIC_URL": "https://multi-tenant-saas-2-api-edge-dev.nexo-7be.workers.dev"
+      }
     },
     "stage": {
-      "vars": { "ENVIRONMENT": "stage" },
+      "vars": {
+        "ENVIRONMENT": "stage",
+        "LUMEN_API_PUBLIC_URL": "https://multi-tenant-saas-2-api-edge-stage.nexo-7be.workers.dev"
+      },
       "hyperdrive": [
         { "binding": "HYPERDRIVE_CMS", "id": "@@wiring(cloudflare-hyperdrive-cms/stage:hyperdrive_id)@@" }
-      ]
+      ],
+      // Lumen staff sign-in (multi-tenant-saas-2-console design §1): sessions
+      // are checked with api-edge over this binding, never over the internet.
+      "services": [{ "binding": "LUMEN_API", "service": "multi-tenant-saas-2-api-edge-stage" }]
     },
     "prod": {
-      "vars": { "ENVIRONMENT": "prod" },
+      "vars": {
+        "ENVIRONMENT": "prod",
+        "LUMEN_API_PUBLIC_URL": "https://multi-tenant-saas-2-api-edge-prod.nexo-7be.workers.dev"
+      },
       "hyperdrive": [
         { "binding": "HYPERDRIVE_CMS", "id": "@@wiring(cloudflare-hyperdrive-cms/prod:hyperdrive_id)@@" }
-      ]
+      ],
+      // Lumen staff sign-in (multi-tenant-saas-2-console design §1): sessions
+      // are checked with api-edge over this binding, never over the internet.
+      "services": [{ "binding": "LUMEN_API", "service": "multi-tenant-saas-2-api-edge-prod" }]
     }
   }
 }

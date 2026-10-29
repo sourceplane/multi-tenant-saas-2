@@ -22,4 +22,4 @@ environment (`stage`, `prod`; `dev` is verify-only). Public entry point: `https:
 
 ## Depended on by
 
-- **web-console-next** — Next.js 15 + opennextjs/cloudflare delivery of the Multi Tenant Saas 2 web console (per-environment, Workers + Static Assets)
+- **cms** — the learning platform and staff console (Payload CMS on Workers): asks the edge, over its `LUMEN_API` service binding, for the staff's Lumen sessions and the account pages' data

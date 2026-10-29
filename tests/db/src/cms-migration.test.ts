@@ -109,3 +109,41 @@ describe("CMS migration (200_cms_payload_core)", () => {
     }
   });
 });
+
+describe("CMS Lumen identity migration (320_cms_lumen_identity)", () => {
+  const sql = readFileSync(
+    resolve(MIGRATIONS_ROOT, "320_cms_lumen_identity/up.sql"),
+    "utf-8",
+  );
+  const ids = manifest.migrations.map((m) => m.id);
+
+  it("is registered under the cms context, after the CMS core and the LMS records", () => {
+    expect(ids.indexOf("320_cms_lumen_identity")).toBeGreaterThan(ids.indexOf("310_lms_learner_records"));
+    expect(manifest.migrations.find((m) => m.id === "320_cms_lumen_identity")!.context).toBe("cms");
+  });
+
+  it("links staff to Lumen by a unique lumen_user_id, and leaves learners alone", () => {
+    expect(sql).toContain('ALTER TABLE "cms"."users" ADD COLUMN IF NOT EXISTS "lumen_user_id" varchar;');
+    expect(sql).toContain('CREATE UNIQUE INDEX IF NOT EXISTS "users_lumen_user_id_idx" ON "cms"."users" USING btree ("lumen_user_id");');
+    expect(sql).not.toMatch(/"learners"/);
+  });
+
+  it("makes the role optional with no default (no role means pending), without a new enum value", () => {
+    expect(sql).toContain('ALTER TABLE "cms"."users" ALTER COLUMN "role" DROP DEFAULT;');
+    expect(sql).toContain('ALTER TABLE "cms"."users" ALTER COLUMN "role" DROP NOT NULL;');
+    expect(sql).not.toMatch(/ADD VALUE/);
+  });
+
+  it("is idempotent statement by statement, and stays in schema cms", () => {
+    for (const stmt of statements(sql)) {
+      const ok =
+        stmt.startsWith("CREATE SCHEMA IF NOT EXISTS ") ||
+        /^CREATE (UNIQUE )?INDEX IF NOT EXISTS /.test(stmt) ||
+        /^ALTER TABLE "cms"\."\w+" ADD COLUMN IF NOT EXISTS /.test(stmt) ||
+        /^ALTER TABLE "cms"\."\w+" ALTER COLUMN "\w+" (DROP DEFAULT|DROP NOT NULL)$/.test(stmt.replace(/;$/, ""));
+      if (!ok) throw new Error(`not idempotent: ${stmt.split("\n")[0]}`);
+    }
+    expect(sql).not.toMatch(/\b(DROP TABLE|DROP COLUMN|GRANT|RENAME)\b/i);
+    expect(sql).not.toMatch(/\b(public|identity|membership|billing|events|projects)\./);
+  });
+});

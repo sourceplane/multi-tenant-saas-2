@@ -1,0 +1,23 @@
+apiVersion: orun.io/v1
+kind: TaskContract
+metadata:
+  name: LX-4
+  title: "LX3: the front door — the console URL opens the staff admin, the academy stays at the root"
+spec:
+  goal: "The Lumen console Worker answers every old path with a 308 to its place in the same environment's CMS (its UI and tests removed); intent.yaml's product URLs, the billing fallback return and the parked custom domain point at the CMS; the admin carries the product's name and mark; the CMS root stays the academy."
+  affects:
+    - "apps/web-console-next/**"
+    - "tests/web-console-next/**"
+    - "apps/cms/**"
+    - "apps/billing-worker/wrangler.template.jsonc"
+    - "infra/terraform/cloudflare-domain/**"
+    - "intent.yaml"
+    - "pnpm-lock.yaml"
+    - "ai/context/operations.md"
+    - "specs/epics/multi-tenant-saas-2-console/IMPLEMENTATION-STATUS.md"
+    - "tasks/LX-4.TaskContract.yaml"
+  doneWhen:
+    - "on stage and prod, the console URL, its old paths and its OAuth callback path answer 308 into the CMS"
+    - "on stage and prod, following the console URL lands on the staff sign-in, whose title reads Multi Tenant Saas 2"
+    - "on stage and prod, the CMS root still renders the academy's catalogue"
+  gates: []

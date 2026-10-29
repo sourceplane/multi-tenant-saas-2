@@ -14,7 +14,7 @@
 //   - rate-limit fires BEFORE replayOrExecute KV touch (denied request never
 //     reaches the idempotency cache)
 
-import { handleAuthRoute } from "@api-edge/auth-facade";
+import { authRouteFamily, handleAuthRoute } from "@api-edge/auth-facade";
 import {
   enforceRateLimit,
   __rateLimitConfigForTest,
@@ -102,6 +102,31 @@ describe("api-edge rate limiter (Task 0097)", () => {
         expect(__rateLimitConfigForTest[f].org.limit).toBeGreaterThan(0);
         expect(__rateLimitConfigForTest[f].identity.limit).toBeGreaterThan(0);
       }
+    });
+  });
+
+  describe("account family (lumen-payload-console PX2)", () => {
+    const get = (path: string, bearer?: string) =>
+      makeRequest({ url: `https://api.example.com${path}`, method: "GET", ...(bearer ? { bearer } : {}) });
+
+    it("a bearer reading its own session, profile or security events is account, not auth", () => {
+      for (const path of ["/v1/auth/session", "/v1/auth/profile", "/v1/auth/security-events"]) {
+        expect(authRouteFamily(get(path, "tok_x"), path)).toBe("account");
+      }
+      const patch = makeRequest({ url: "https://api.example.com/v1/auth/profile", method: "PATCH", bearer: "tok_x" });
+      expect(authRouteFamily(patch, "/v1/auth/profile")).toBe("account");
+    });
+
+    it("sign-in, OAuth, logout and anything without a bearer stay on the tight auth family", () => {
+      expect(authRouteFamily(makeRequest({}), "/v1/auth/login/start")).toBe("auth");
+      expect(authRouteFamily(get("/v1/auth/oauth/github/start"), "/v1/auth/oauth/github/start")).toBe("auth");
+      expect(authRouteFamily(makeRequest({ url: "https://api.example.com/v1/auth/logout", bearer: "tok_x" }), "/v1/auth/logout")).toBe("auth");
+      expect(authRouteFamily(get("/v1/auth/session"), "/v1/auth/session")).toBe("auth");
+    });
+
+    it("lets a signed-in session make the admin's page loads, still capped", () => {
+      expect(__rateLimitConfigForTest.account.identity.limit).toBeGreaterThanOrEqual(60);
+      expect(__rateLimitConfigForTest.auth.identity.limit).toBeLessThan(__rateLimitConfigForTest.account.identity.limit);
     });
   });
 

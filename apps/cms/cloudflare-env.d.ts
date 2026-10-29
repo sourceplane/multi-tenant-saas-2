@@ -4,6 +4,12 @@ interface CloudflareEnv {
   ASSETS: Fetcher
   HYPERDRIVE_CMS: Hyperdrive
   ENVIRONMENT: string
+  /** api-edge, over a service binding: the CMS server's way to Lumen (stage and prod). */
+  LUMEN_API?: Fetcher
+  /** api-edge's public URL, which the browser calls to sign in. */
+  LUMEN_API_PUBLIC_URL?: string
+  /** api-edge's URL for a local run without the binding. */
+  LUMEN_API_URL?: string
   PAYLOAD_SECRET?: string
   CMS_SETUP_TOKEN?: string
 }

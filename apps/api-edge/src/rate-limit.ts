@@ -49,6 +49,7 @@ import type { Env } from "./env.js";
 
 export type RouteFamily =
   | "auth"
+  | "account"
   | "org"
   | "project"
   | "config"
@@ -76,6 +77,12 @@ interface FamilyConfig {
  * blunting abuse. Tunable; no per-tenant overrides yet (B5 territory).
  *
  *   - `auth`: tighter — login/logout flows are the brute-force target.
+ *   - `account`: a signed-in person reading their own session, profile and
+ *     security events (and saving their profile). The bucket is keyed on the
+ *     bearer itself, so the tight `auth` cap never slowed token guessing —
+ *     every guess gets a fresh bucket — and it only throttled a real session;
+ *     the Payload admin re-checks its session and reads the profile on page
+ *     loads (lumen-payload-console PX2).
  *   - everything else (writes/reads): 60/300 per minute identity/org.
  *   - `audit` is read-only and trusted further; raised to 120/600.
  */
@@ -83,6 +90,10 @@ const LIMITS: Record<RouteFamily, FamilyConfig> = {
   auth: {
     identity: { limit: 10, windowSec: 60 },
     org: { limit: 60, windowSec: 60 },
+  },
+  account: {
+    identity: { limit: 60, windowSec: 60 },
+    org: { limit: 300, windowSec: 60 },
   },
   org: {
     identity: { limit: 60, windowSec: 60 },

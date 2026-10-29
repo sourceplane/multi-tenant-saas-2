@@ -13,6 +13,7 @@ if (typeof globalThis.crypto.randomUUID !== "function") {
 
 import { handleSecurityEvents } from "../../../apps/identity-worker/src/handlers/security-events";
 import { createAuthService } from "../../../apps/identity-worker/src/services/auth";
+import { parseUserPublicId } from "../../../apps/identity-worker/src/ids";
 
 interface JsonResp {
   data: { securityEvents: PublicSecurityEvent[] };
@@ -25,7 +26,10 @@ interface JsonResp {
 }
 
 // Helpers to create an authenticated session and get a bearer token
-async function setupAuthenticatedUser(repo: ReturnType<typeof createFakeRepository>) {
+async function setupAuthenticatedUser(
+  repo: ReturnType<typeof createFakeRepository>,
+  { keepSignInEvents = false }: { keepSignInEvents?: boolean } = {},
+) {
   // Use a recent timestamp so the session (30-day TTL) is valid for the handler's `new Date()`
   const recentPast = new Date(Date.now() - 60_000); // 1 minute ago
   const auth = createAuthService({ repo, now: () => recentPast });
@@ -35,7 +39,14 @@ async function setupAuthenticatedUser(repo: ReturnType<typeof createFakeReposito
   const completeResult = await auth.completeLogin(loginResult.challengeId, loginResult.rawCode);
   if ("error" in completeResult) throw new Error("completeLogin failed");
 
-  return { token: completeResult.token, userId: completeResult.user.id };
+  // Events are stored under the user's bare UUID, as the auth service records
+  // them; the session hands out the public id.
+  const userId = parseUserPublicId(completeResult.user.id);
+  if (!userId) throw new Error("unexpected public user id");
+  // Signing in records its own events; most tests start from none so they
+  // control exactly what is listed.
+  if (!keepSignInEvents) repo._securityEvents.length = 0;
+  return { token: completeResult.token, userId };
 }
 
 function makeEnv(db: Hyperdrive = {} as Hyperdrive): Env {
@@ -94,6 +105,23 @@ describe("GET /v1/auth/security-events", () => {
       expect(json.data.securityEvents).toEqual([]);
       expect(json.meta.requestId).toBe("req_test3");
       expect(json.meta.cursor).toBeNull();
+    });
+
+    it("returns the events sign-in itself recorded (public id in the session, UUID in the table)", async () => {
+      const repo = createFakeRepository();
+      const { token } = await setupAuthenticatedUser(repo, { keepSignInEvents: true });
+      const seen: string[] = [];
+      const query = repo.querySecurityEventsByUser.bind(repo);
+      repo.querySecurityEventsByUser = async (params) => {
+        seen.push(params.userId);
+        return query(params);
+      };
+
+      const response = await handleSecurityEvents(makeRequest(token), makeEnv(), "req_signin", { repo });
+      expect(response.status).toBe(200);
+      const json = (await response.json()) as JsonResp;
+      expect(json.data.securityEvents.length).toBeGreaterThan(0);
+      expect(seen[0]).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
     });
 
     it("returns security events for authenticated user", async () => {

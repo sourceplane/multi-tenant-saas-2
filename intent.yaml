@@ -162,7 +162,7 @@ environments:
 
   stage:
     description: The fleet, the API edge and the console, deployed on every merge to main before prod.
-    url: https://multi-tenant-saas-2-web-console-next-stage.nexo-7be.workers.dev
+    url: https://multi-tenant-saas-2-cms-stage.nexo-7be.workers.dev
     links:
       - { title: API, url: https://multi-tenant-saas-2-api-edge-stage.nexo-7be.workers.dev }
       - { title: Health, url: https://multi-tenant-saas-2-api-edge-stage.nexo-7be.workers.dev/health }
@@ -186,7 +186,7 @@ environments:
 
   prod:
     description: Where customers are. Deploys after stage converges on the same commit.
-    url: https://multi-tenant-saas-2-web-console-next-prod.nexo-7be.workers.dev
+    url: https://multi-tenant-saas-2-cms-prod.nexo-7be.workers.dev
     links:
       - { title: API, url: https://multi-tenant-saas-2-api-edge-prod.nexo-7be.workers.dev }
       - { title: Health, url: https://multi-tenant-saas-2-api-edge-prod.nexo-7be.workers.dev/health }

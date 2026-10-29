@@ -219,5 +219,14 @@ export const manifest: MigrationManifest = {
       description:
         "LMS learner records (multi-tenant-saas-2-lms LMS3) — learners (auth) and their sessions, enrolments, lesson progress, quiz attempts and certificates, with unique (learner, course) enrolments and certificates, unique (learner, lesson) progress and unique serials; generated from apps/cms/payload-migrations",
     },
+    {
+      id: "320_cms_lumen_identity",
+      context: "cms",
+      path: "320_cms_lumen_identity/up.sql",
+      checksum:
+        "bb9cd0d3092649c2fd26f4b41116a986c95fa311e45a67df60ee040a1e657414",
+      description:
+        "CMS staff sign in with Lumen (multi-tenant-saas-2-console LX1) — users gain lumen_user_id (unique, the link to identity.users) and role becomes optional with no default (no role means pending); learners are unchanged; generated from apps/cms/payload-migrations",
+    },
   ],
 };
