@@ -34,7 +34,7 @@ what not to touch.
 | `apps/cms` | The product: the learning platform on Payload CMS (OpenNext on Workers). Academies and their catalogue at `/`, learners with their own accounts; the admin at `/admin` is the staff console, signed in with a Lumen account, with the account and billing pages calling the edge server to server |
 | `apps/web-console-next` | The old console URL, now a redirect Worker: every path answers 308 to its place in the CMS |
 | `packages/*` | Shared libraries: contracts, SDK, CLI, the database harness, the policy engine, the notifications client, the webhook verifier |
-| `infra/terraform/*` | The data plane: Supabase projects, Hyperdrive, the edge's idempotency KV, and the custom-domain component (parked until a domain is set) |
+| `infra/terraform/*` | The data plane: Supabase projects, Hyperdrive, the edge's idempotency KV, the CMS's media bucket on R2, and the custom-domain component (parked until a domain is set) |
 | `infra/db-migrate` | Database migrations — planned on pull requests, applied on merge |
 | `tests/*` | Per-component contract and verifier suites |
 | `intent.yaml` | The environments, the pinned composition catalog, and the Orun workspace this repository deploys into |

@@ -11,6 +11,7 @@ the code departed from `design.md`.
 | LMS3 — learner records | ✅ Shipped: migration 310 applied; `/api/lms` live | sourceplane/multi-tenant-saas-2#9 |
 | LMS4 — the learner app | ✅ Shipped: catalogue, course, lesson, quiz, certificate and account pages live | sourceplane/multi-tenant-saas-2#10 |
 | LMS5 — the record | ✅ Shipped | sourceplane/multi-tenant-saas-2#11 |
+| LMS6 — media on R2 (added after LMS5) | ✅ Shipped: buckets `stg-multi-tenant-saas-2-cms-media-stage` and `prod-multi-tenant-saas-2-cms-media-prod` applied, migration 330 applied, `media` live on stage and prod | sourceplane/multi-tenant-saas-2#24 (bucket), #25 (media), and this record |
 
 ## Live verification (2026-10-28)
 
@@ -56,6 +57,32 @@ loops on Next's route-group chunks (`/_next/static/chunks/app/(learn)/…`,
 gets 200; the browser runs above fetched `/_next/static/**` over Node's HTTP
 stack to step around the proxy.
 
+## LMS6 verification (2026-10-29)
+
+- **Locally, 44 of 44**, on the built CMS Worker in workerd with a local R2
+  bucket and a database built only from migrations 200–330, staff signed in
+  with real Lumen sessions from stage's api-edge:
+  - pending and anonymous accounts cannot upload
+  - an editor uploads a PNG, served back to anyone byte for byte, and the object is in the bucket
+  - SVG, a missing alt text and an upload over 10 MiB are refused, and nothing is stored for them
+  - a second file of the same name gets its own name
+  - only an admin deletes, and the file is gone from the bucket too
+  - an instructor uploads and edits only inside their academy, and cannot move a file to another academy or to the site
+  - an editor manages site media only, and nothing is hijacked
+- **The migrations equal Payload's schema:** a database built from 200–330
+  and one Payload pushed itself dump identically (`pg_dump -s -n cms`, column
+  order aside), and `330` applies twice.
+- **Stage and prod, after the merge (read-only):**
+  - the bucket applies are green, and `WIRING_CLOUDFLARE_R2_CMS` is published on both environment rungs
+  - `db-migrate` applied `330_cms_media` on both
+  - each deploy log binds `R2_MEDIA` to its own bucket
+  - `/health` is ok, `/api/media` lists, a missing file answers 404, and an anonymous upload is refused (403)
+  - the catalogue and the admin sign-in still render: 7 of 7 on each
+- **On stage, a signed-in Lumen account with no role** cannot upload (403).
+  The only staff admin is the owner's own account, which these checks do not
+  use, so the signed-in upload path was proven locally against stage's
+  api-edge, as above.
+
 ## Departures from the design
 
 - **Inherited from the CMS layer** (lumen-payload-cms's status file has the
@@ -75,3 +102,22 @@ stack to step around the proxy.
 - **Workers Paid (LMS-I) was needed before anything here could land:** the
   baseline's own 04-workers phase stopped on Free's cron limit, and the owner
   upgraded the account.
+- **LMS6 was not in the plan.** The design left media uploads out until the
+  CMS layer's R2 milestone (`lumen-payload` PC4) shipped. It is a seventh
+  milestone, added after the record, in three pull requests.
+- **Media is scoped to academies**, which PC4 is not: a file belongs to the
+  site (editors) or to one academy (its instructors), and admins alone
+  delete. `enforceMediaScope` runs before the storage adapter, so a refused
+  upload stores nothing.
+- **Migration `330`, not `320`.** The first draft numbered it `320`, which
+  the console epic's staff sign-in took first (`320_cms_lumen_identity`). The
+  media migration was regenerated on top of that snapshot; its SQL is the
+  draft's, apart from the header.
+- **The deploy skips resource provisioning** (stack-tectonic 0.21.0,
+  inherited from `lumen-payload` PC-K): left on, wrangler reads the R2 bucket
+  with the Workers deploy token, which has no R2 permission. Terraform owns
+  every resource the bindings name.
+- **The R2 token** was minted on 2026-10-29 from the Cloudflare connection's
+  `r2-data` template, rotated every 30 days and scoped to the two buckets; an
+  earlier attempt on 2026-10-28 hit the workspace's daily mint limit, which
+  counted connection facts until sourceplane/orun-cloud#2106 and #2112.

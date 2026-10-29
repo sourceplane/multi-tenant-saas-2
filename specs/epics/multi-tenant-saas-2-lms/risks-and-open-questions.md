@@ -46,10 +46,15 @@ SCORM, xAPI/cmi5 and LTI each serve a different buyer. Choosing none keeps v1
 small; the model leaves room (a lesson can later carry a package or a launch
 URL). Revisit when the first buyer is chosen.
 
-## LMS-F — Media is URLs until R2 (ACCEPTED)
+## LMS-F — Media is URLs until R2 (RESOLVED in LMS6)
 
-Courses carry `cover_url` and lessons `video_url`. Uploads arrive with the
-CMS layer's R2 milestone, gated on an `r2-data` token.
+Courses carried `cover_url` and lessons `video_url` until the CMS layer's R2
+milestone shipped. LMS6 brought uploads: `CLOUDFLARE_R2_TOKEN` was minted
+from the Cloudflare connection's `r2-data` template (project rung, rotated
+every 30 days, scoped to the two media buckets), `cloudflare-r2-cms` applied
+the buckets, and the CMS binds its environment's bucket as `R2_MEDIA`. The
+URL fields stay: a cover may still be a link, and video stays a link (10 MiB
+is too small for it).
 
 ## LMS-G — Learner accounts are self-asserted (ACCEPTED for v1)
 
