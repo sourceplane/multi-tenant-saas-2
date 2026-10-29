@@ -61,8 +61,11 @@ opens. Once per environment:
 
 1. Choose a token of at least 16 characters, and keep it to yourself.
 2. Give it to the Worker, either way:
-   - in the workspace's secrets for that environment, as `CMS_SETUP_TOKEN`; the
-     next CMS deploy pushes it; or
+   - in the workspace's secrets as `CMS_SETUP_TOKEN`, for that environment or
+     on the workspace-shared rung (both environments read it). The CMS's next
+     deploy from `main` pushes it to the Worker, so merge any change under
+     `apps/cms`. Re-running an earlier run's lane does not deploy (the lane's
+     result is reused), and the on-demand dispatch only verifies; or
    - directly: `pnpm exec wrangler secret put CMS_SETUP_TOKEN --name multi-tenant-saas-2-cms-<env>`
      (it prompts for the value).
 3. Visit `https://multi-tenant-saas-2-cms-<env>.nexo-7be.workers.dev/setup?token=<token>`.
