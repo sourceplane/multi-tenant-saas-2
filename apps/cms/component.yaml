@@ -78,6 +78,9 @@ spec:
           - profile: deploy
             when:
               triggerRef: github-push-main
+          - profile: deploy
+            when:
+              triggerRef: github-dispatch
       - name: prod
         profile: verify
         env:
@@ -86,6 +89,9 @@ spec:
           - profile: deploy
             when:
               triggerRef: github-push-main
+          - profile: deploy
+            when:
+              triggerRef: github-dispatch
   parameters:
     nodeVersion: "22"
     pnpmVersion: "10.12.1"

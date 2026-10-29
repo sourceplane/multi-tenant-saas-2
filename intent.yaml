@@ -117,9 +117,17 @@ automation:
     # that pushed a partial snapshot would make the catalog describe a plan
     # nobody ran.
     #
+    # A dispatch deploys only because each component's stage and prod
+    # subscriptions carry a `profileRules` entry naming this binding, beside
+    # the github-push-main one: deploy for a Worker, apply for Terraform and
+    # db-migrate. Without it the subscription's default profile (verify,
+    # plan-only) ran, so a dispatch built and dry-ran and deployed nothing.
+    # A new component needs the same two rules.
+    #
     # `requireRule` is DELIBERATELY off. Turning it on means a component is
     # dispatchable only if one of its `profileRules` names this binding —
-    # safer, and 45 components' worth of opt-in. The guard that matters here
+    # safer, and a component without the rule would be refused rather than
+    # verified. The guard that matters here
     # is the environment list below: a dispatch can only reach an environment
     # that activates this binding, so dev (verify-only) cannot be deployed
     # into by anybody.

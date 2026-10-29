@@ -53,6 +53,9 @@ spec:
           - profile: apply
             when:
               triggerRef: github-push-main
+          - profile: apply
+            when:
+              triggerRef: github-dispatch
 
       - name: prod
         profile: plan
@@ -60,6 +63,9 @@ spec:
           - profile: apply
             when:
               triggerRef: github-push-main
+          - profile: apply
+            when:
+              triggerRef: github-dispatch
 # ci: re-trigger deploy (batch A — runner-starvation recovery 20260622T115650Z)
 # ci: re-trigger deploy (batch A — runner-starvation recovery 20260622T115650Z)
 # ci: re-apply migrations onto the recreated Supabase database (20260821T062704Z)
