@@ -56,6 +56,9 @@ spec:
           - profile: apply
             when:
               triggerRef: github-push-main
+          - profile: apply
+            when:
+              triggerRef: github-dispatch
 
       - name: prod
         profile: plan-only
@@ -63,6 +66,9 @@ spec:
           - profile: apply
             when:
               triggerRef: github-push-main
+          - profile: apply
+            when:
+              triggerRef: github-dispatch
 # ci: trigger convergence — first-boot infra bring-up (hyperdrive stage/prod)
 # ci: re-apply hyperdrive against the recreated Supabase origin (20260821T061640Z)
 # orun: redeploy 03-infrastructure-database as_174c1bfbb7904bf182a4

@@ -1,0 +1,18 @@
+apiVersion: orun.io/v1
+kind: TaskContract
+metadata:
+  name: DSP-1
+  title: "The on-demand deploy deploys"
+spec:
+  goal: "A workflow_dispatch of CI for a component and an environment deploys (Workers) or applies (Terraform, db-migrate) that component there, instead of only verifying it; pull requests still only verify and plan."
+  affects:
+    - "apps/*/component.yaml"
+    - "infra/**/component.yaml"
+    - "intent.yaml"
+    - "apps/cms/docs/runbook.md"
+    - "ai/context/operations.md"
+    - "tasks/DSP-1.TaskContract.yaml"
+  doneWhen:
+    - "a simulated dispatch plans the deploy or apply profile, and a simulated pull request still plans verify and plan-only"
+    - "after the merge, a dispatch of cms to stage deploys it (its log shows the deploy and smoke steps)"
+  gates: []
