@@ -63,9 +63,10 @@ opens. Once per environment:
 2. Give it to the Worker, either way:
    - in the workspace's secrets as `CMS_SETUP_TOKEN`, for that environment or
      on the workspace-shared rung (both environments read it). The CMS's next
-     deploy from `main` pushes it to the Worker, so merge any change under
-     `apps/cms`. Re-running an earlier run's lane does not deploy (the lane's
-     result is reused), and the on-demand dispatch only verifies; or
+     deploy pushes it to the Worker: run the on-demand deploy (Actions → CI →
+     Run workflow, component `cms`, environment `stage` or `prod`), or merge any
+     change under `apps/cms`. Re-running an earlier run does not deploy: the
+     lane's recorded result is reused; or
    - directly: `pnpm exec wrangler secret put CMS_SETUP_TOKEN --name multi-tenant-saas-2-cms-<env>`
      (it prompts for the value).
 3. Visit `https://multi-tenant-saas-2-cms-<env>.nexo-7be.workers.dev/setup?token=<token>`.

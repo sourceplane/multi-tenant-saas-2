@@ -53,6 +53,9 @@ spec:
           - profile: apply
             when:
               triggerRef: github-push-main
+          - profile: apply
+            when:
+              triggerRef: github-dispatch
 
       - name: prod
         profile: plan-only
@@ -60,3 +63,6 @@ spec:
           - profile: apply
             when:
               triggerRef: github-push-main
+          - profile: apply
+            when:
+              triggerRef: github-dispatch

@@ -47,6 +47,9 @@ spec:
           - profile: apply
             when:
               triggerRef: github-push-main
+          - profile: apply
+            when:
+              triggerRef: github-dispatch
 
       - name: prod
         profile: plan-only
@@ -54,5 +57,8 @@ spec:
           - profile: apply
             when:
               triggerRef: github-push-main
+          - profile: apply
+            when:
+              triggerRef: github-dispatch
 # ci: re-trigger kv apply with brand-namespaced title (baseline collision fix)
 # orun: redeploy 03-infrastructure as_174c1bfbb7904bf182a4

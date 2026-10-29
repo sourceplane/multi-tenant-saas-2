@@ -218,7 +218,7 @@ that, are in [`apps/cms/docs/runbook.md`](../../apps/cms/docs/runbook.md):
 
 ```bash
 orun secrets set CMS_SETUP_TOKEN --org <ws> --env stage   # a token of 16+ characters; it prompts
-# merge any change under apps/cms so its next deploy from main pushes it (a re-run or a dispatch does not deploy), or:
+# dispatch CI (component cms, environment stage) or merge a change under apps/cms so the next deploy pushes it (a re-run does not deploy), or:
 #   pnpm --filter @saas/cms exec wrangler secret put CMS_SETUP_TOKEN --name multi-tenant-saas-2-cms-stage
 # then visit https://multi-tenant-saas-2-cms-stage.<subdomain>.workers.dev/setup?token=<token>
 ```
