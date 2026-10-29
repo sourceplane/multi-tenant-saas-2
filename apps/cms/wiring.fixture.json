@@ -4,5 +4,11 @@
   },
   "cloudflare-hyperdrive-cms/prod": {
     "hyperdrive_id": "00000000000000000000000000000013"
+  },
+  "cloudflare-r2-cms/stage": {
+    "bucket_name": "stg-multi-tenant-saas-2-cms-media-stage"
+  },
+  "cloudflare-r2-cms/prod": {
+    "bucket_name": "prod-multi-tenant-saas-2-cms-media-prod"
   }
 }
