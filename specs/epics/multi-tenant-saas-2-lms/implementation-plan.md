@@ -74,6 +74,21 @@ instructor, publishing a course), component docs, `AGENTS.md`, and
 - an owner can open the admin and publish a course from the docs alone
 - the status file is complete
 
+## LMS6 — media on R2 (added after LMS5)
+
+Added once `lumen-payload` PC4 shipped media on R2 (LMS-F). Three pull
+requests: `infra/terraform/cloudflare-r2-cms` (a private bucket per
+environment, landed on its own because the CMS's wrangler config names both
+environments' buckets); the `media` collection, ported from PC4 and scoped
+like the rest of the learning domain (the site's files for editors, an
+academy's files for its instructors), with migration `330_cms_media`; and
+the record.
+
+**Done when**
+- on stage and prod the bucket applies and the CMS binds it as `R2_MEDIA`
+- `/api/media` answers on stage and prod, and an anonymous upload is refused
+- an instructor uploads into their academy and nowhere else
+
 ## Sequencing note
 
 LMS1 waits for `lumen-payload` PC3 to be live, because it ports what shipped

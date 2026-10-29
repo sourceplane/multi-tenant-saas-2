@@ -20,14 +20,14 @@ certificate, and an instructor can author the next course in `/admin`.
 
 | Field | Value |
 |-------|-------|
-| Status | Shipped (LMS0–LMS5) |
+| Status | Shipped (LMS0–LMS6) |
 | Cluster | **LMS** (LMS0–LMS5) |
 | Owner(s) | `apps/cms` (content, learner records, learner app) · `infra/terraform/cloudflare-hyperdrive-cms` · `packages/db` (schema, as migrations) |
 | Builds on | `lumen baseline-v32` for the fleet, and `sourceplane/lumen-payload`'s PC1–PC3 for the CMS layer |
 | Changes | Adds the CMS layer (three components, one migration) and the learning domain on top of it. No existing worker changes. |
 | Decisions locked | (1) One pooled Payload instance; tenancy by field and access rule. (2) Learner records are Payload collections on Postgres, so enrolment, completion and certification are **transactional**. (3) Learners sign in to the learner app itself, not through Lumen identity. (4) A course is complete when every lesson is done and every quiz is passed; completion issues the certificate in the same transaction. (5) Quizzes are scored on the server and correct answers never reach a learner. (6) Every service that changes progress serializes on the learner's enrolment row. |
 | Gate | LMS1 is the ported CMS. LMS2 is invisible to learners. LMS4 is the first learner-facing change. |
-| Shipped as | sourceplane/multi-tenant-saas-2#6 (spec), #7 (the CMS layer), #8 (course model), #9 (learner records), #10 (learner app), #11 (the record) |
+| Shipped as | sourceplane/multi-tenant-saas-2#6 (spec), #7 (the CMS layer), #8 (course model), #9 (learner records), #10 (learner app), #11 (the record), #24 and #25 (media on R2) and its record |
 
 ## Read order
 
@@ -46,3 +46,4 @@ certificate, and an instructor can author the next course in `/admin`.
 | LMS3 — learner records | learners, enrolments, lesson progress, quiz attempts, certificates; the transactional services and their endpoints | a learner can enrol, complete and be certified through the API on stage |
 | LMS4 — the learner app | catalogue, course page, lesson player, quizzes, my learning, public certificates | the catalogue renders the sample course on stage and prod, and the full path works in a browser |
 | LMS5 — the record | operations guide, docs, status | an owner can run the academy from the docs alone |
+| LMS6 — media on R2 (added after LMS5) | the CMS's media bucket; uploads scoped to the site or an academy; its record | uploads work on stage and prod, and an instructor's reach ends at their academies |

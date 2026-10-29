@@ -134,8 +134,8 @@ catalogue renders (a page marker), not that this course is in it.
   buyer (corporate compliance, analytics, or education). Not chosen yet.
 - **Payments.** Enrolment is free. A paid course is a Stripe checkout that
   calls the enrol service on success — a later epic.
-- **Media uploads.** Inherits `lumen-payload` PC4's gate; courses use cover and
-  video URLs until R2 is available.
+- **Media uploads** were out of scope here, waiting on `lumen-payload` PC4.
+  They shipped later as LMS6 (`IMPLEMENTATION-STATUS.md`).
 - **Lumen identity and orgs for learners.** `workers.dev` is a public suffix,
   so the console's session cannot reach the CMS host. A tenant may record its
   Lumen org (`tenants.lumenOrgId`, hidden from learners) for the operator's billing, but nothing

@@ -1,0 +1,17 @@
+apiVersion: orun.io/v1
+kind: TaskContract
+metadata:
+  name: LMS-9
+  title: "LMS6, part 3: the record — media on R2 shipped"
+spec:
+  goal: "The repository records LMS6 as it runs: the media bucket and its rotated token, uploads scoped to the site or an academy, migration 330, the live verification on stage and prod, and every departure from the design."
+  affects:
+    - "AGENTS.md"
+    - "README.md"
+    - "ai/context/operations.md"
+    - "specs/epics/multi-tenant-saas-2-lms/**"
+    - "tasks/LMS-9.TaskContract.yaml"
+  doneWhen:
+    - "IMPLEMENTATION-STATUS.md lists LMS6 as shipped with its PRs and the stage and prod verification"
+    - "risk LMS-F reads resolved, and the operations guide describes media and CLOUDFLARE_R2_TOKEN"
+  gates: []

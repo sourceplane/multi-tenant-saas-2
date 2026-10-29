@@ -30,8 +30,9 @@ component-native desired-state repo:
   organization, notifications, security-activity and billing pages. See
   [The learning platform](#the-learning-platform-appscms).
 - **`infra/terraform/*`** — data plane: Supabase projects (stage/prod),
-  Cloudflare Hyperdrive, idempotency KV, and the CMS's own cache-disabled
-  Hyperdrive (`cloudflare-hyperdrive-cms`). **`infra/db-migrate`** —
+  Cloudflare Hyperdrive, idempotency KV, the CMS's own cache-disabled
+  Hyperdrive (`cloudflare-hyperdrive-cms`) and its private media bucket on R2
+  (`cloudflare-r2-cms`). **`infra/db-migrate`** —
   database migrations (plan on PRs, apply on merge), the learning
   platform's schema `cms` among them.
 - **`packages/*`** — shared contracts/SDK packages the apps build on.
@@ -87,11 +88,16 @@ Caveats that matter:
   `SUPABASE_ACCESS_TOKEN`, `SUPABASE_ORG_ID` — pointers minted per-run
   from the workspace's integration connections. No long-lived values at
   rest; nothing to rotate by hand.
+- **Rotated provider secret** (project rung): `CLOUDFLARE_R2_TOKEN`, minted
+  from the Cloudflare connection's `r2-data` template, scoped to the two
+  media buckets and re-minted by the platform every 30 days. Only
+  `cloudflare-r2-cms`'s Terraform uses it; the CMS reaches its bucket over the
+  `R2_MEDIA` binding and holds no R2 credential.
 - **Job-output secrets** (environment rungs): `WIRING_*`,
   `SUPABASE_PROJECT_REF`, `SUPABASE_DB_URL`, `SUPABASE_DB_PASSWORD`,
   `CMS_PAYLOAD_SECRET` — published by the infrastructure terraform; deploy
-  lanes resolve them to wire worker bindings (KV ids, Hyperdrive ids,
-  database URLs) and the CMS's Payload secret.
+  lanes resolve them to wire worker bindings (KV ids, Hyperdrive ids, the
+  CMS's bucket name, database URLs) and the CMS's Payload secret.
 - Inspect by NAME only: `orun secrets list --org <ws> --project` and
   `--env stage|prod`. No tooling in this repo ever prints a secret value,
   and no document in `ai/context/` may contain one.
@@ -166,7 +172,8 @@ answers 308 into it.
 | `/courses/<academy>/<course>` | anyone | a course's outline; enrol from here |
 | `/learn/…`, `/me` | signed-in learners | lessons, quizzes, progress, certificates |
 | `/certificates/<serial>` | anyone | verifies a certificate (name, course, academy, date) |
-| `/admin` | staff, signed in with their Lumen account | academies, courses, lessons, quizzes, learners, site pages |
+| `/admin` | staff, signed in with their Lumen account | academies, courses, lessons, quizzes, learners, media, site pages |
+| `/api/media/file/<filename>` | anyone | an uploaded image or PDF, served from R2 |
 | `/api/lms/*` | learners (certificates: anyone) | enrol, complete a lesson, attempt a quiz, my learning, verify |
 
 - **Tenancy:** every course, lesson, quiz and learner record belongs to one
@@ -177,6 +184,13 @@ answers 308 into it.
   attempts and the certificate are written in Postgres transactions that
   first lock the learner's enrolment row, so two final steps finished at once
   cannot both miss the completion, and a certificate is issued exactly once.
+- **Media:** images and PDFs (alt text required, no SVG, at most 10 MiB) are
+  uploaded in the admin and stored in the environment's private R2 bucket
+  (`<prefix>multi-tenant-saas-2-cms-media-<env>`), served back by the CMS at
+  `/api/media/file/<filename>`. A file belongs to the site (editors manage
+  it) or to one academy (its instructors manage it); admins manage all of it
+  and are the only ones who delete. Files are public by URL. Courses keep
+  their cover and video URLs: a video stays a link.
 - **Database path:** its own Hyperdrive config, `multi-tenant-saas-2-cms-<env>`
   (`infra/terraform/cloudflare-hyperdrive-cms`), with query caching disabled.
   Each query or transaction opens its own client; Hyperdrive pools.
@@ -189,7 +203,7 @@ answers 308 into it.
   pages). Learners are separate accounts and sign in to the academy at
   `/login` with their own email and password.
 - **Schema:** `cms`, created and changed only by migrations `200`, `300`,
-  `301`, `310` and `320` in the `db-migrate` lane. `301` seeds *Demo Academy* with the
+  `301`, `310`, `320` and `330` in the `db-migrate` lane. `301` seeds *Demo Academy* with the
   *Getting started* course; an admin may edit, unpublish or delete it.
 - **Secrets:** `CMS_PAYLOAD_SECRET` is generated and published by
   `cloudflare-hyperdrive-cms` and pushed to the Worker as `PAYLOAD_SECRET`.

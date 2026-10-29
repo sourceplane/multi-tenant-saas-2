@@ -41,8 +41,9 @@ is what deploys it.
 - `apps/web-console-next` — a small redirect Worker: every old console
   path answers 308 to its place in the same environment's CMS.
 - `packages/*` — contracts, SDK, CLI, database harness, policy engine.
-- `infra/terraform/*` — Supabase, Hyperdrive, KV, and the CMS's own
-  Hyperdrive (`cloudflare-hyperdrive-cms`); `infra/db-migrate` — the schema
+- `infra/terraform/*` — Supabase, Hyperdrive, KV, the CMS's own Hyperdrive
+  (`cloudflare-hyperdrive-cms`) and media bucket on R2 (`cloudflare-r2-cms`);
+  `infra/db-migrate` — the schema
   migrations.
 - `tests/*` — one suite per component.
 
