@@ -17,7 +17,7 @@
 apiVersion: orun.io/v1
 kind: Blueprint
 metadata:
-  name: multi-tenant-saas-2
+  name: payload-lms
   displayName: Multi-tenant LMS
   description: >
     Cloudflare + Supabase multi-tenant learning platform on Payload CMS:
@@ -29,7 +29,7 @@ metadata:
   tags: [saas, lms, cms, cloudflare, supabase, payload, nextjs]
 spec:
   source:
-    repo: sourceplane/multi-tenant-saas-2
+    repo: sourceplane/payload-lms
     # No `tag`. See the header: the registry pins it, this file is fetched at it.
   # ── What the operator reads first (the flow's step 1) ───────────────────
   overview:

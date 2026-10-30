@@ -94,8 +94,8 @@ The whole bootstrap, unattended. `--resume` places every phase not already
 derived as done, in dependency order, honouring each phase's barrier:
 
 ```bash
-git clone --depth 1 --branch <baseline-tag> https://github.com/sourceplane/multi-tenant-saas-2
-cd multi-tenant-saas-2
+git clone --depth 1 --branch <baseline-tag> https://github.com/sourceplane/payload-lms
+cd payload-lms
 
 orun new --blueprint repo-blueprint.yaml \
   --out ~/sourceplane/acme --run-hooks --resume \
@@ -229,8 +229,8 @@ reads it, so the run is reproducible and provenanced.
 export ORUN_TOKEN=…          # orun auth, headless
 export GITHUB_TOKEN=…        # fine-grained PAT (scopes below)
 
-git clone --depth 1 --branch <baseline-tag> https://github.com/sourceplane/multi-tenant-saas-2
-cd multi-tenant-saas-2
+git clone --depth 1 --branch <baseline-tag> https://github.com/sourceplane/payload-lms
+cd payload-lms
 
 orun new --blueprint repo-blueprint.yaml \
   --out /work/acme --run-hooks --resume --progress json \
@@ -255,7 +255,7 @@ none of that happens. To see the *shape* without a real run, use `--status`.
 |---|---|
 | image deps | `git`, `gh`, `node` (≥ 20), `pnpm`, `python3`, `curl`, `orun` ≥ v2.88.0 to run the bootstrap. The product's `ci.yml` lane pin (v2.78.4) is its own floor |
 | `ORUN_TOKEN` | orun access token; the typed actions authenticate with it (no login flow). A session token from `orun auth token` lives ~30m, shorter than a full run: use the workspace's admin-role API key, mint one per phase, or point `ORUN_TOKEN_FILE` at a file something keeps fresh (the CLI re-reads it on every call and prefers it) |
-| `GITHUB_TOKEN` | fine-grained PAT: **read** on `sourceplane/multi-tenant-saas-2` (the clone); on the PRODUCT repo: **contents write** (pushes), **pull-requests write** (landings), **actions read+write** (`orun.run/watch@v1` watches runs and re-runs failed lanes), **checks read**; **repo create** on the org if `01-scaffold` creates the repo (or pre-create it, empty — supported) |
+| `GITHUB_TOKEN` | fine-grained PAT: **read** on `sourceplane/payload-lms` (the clone); on the PRODUCT repo: **contents write** (pushes), **pull-requests write** (landings), **actions read+write** (`orun.run/watch@v1` watches runs and re-runs failed lanes), **checks read**; **repo create** on the org if `01-scaffold` creates the repo (or pre-create it, empty — supported) |
 | pinning | the clone's `--branch <tag>` pins EVERYTHING: the blueprint, its modules, and the hooks' scripts all come from that one commit. Use a tag for reproducible bootstraps; `main` for latest |
 | workdir | `--out` is the product tree and is stable across phases and re-runs. The baseline checkout is `{{ .baseline.dir }}` to every hook |
 | classic-token caveat | a CLASSIC PAT or gh OAuth token additionally needs the `workflow` scope to push the CI files under `.github` (hit live); fine-grained PATs need only `contents: write` |

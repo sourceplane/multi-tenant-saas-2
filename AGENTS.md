@@ -1,6 +1,6 @@
-# AGENTS.md — Multi Tenant Saas 2
+# AGENTS.md — Payload LMS
 
-You are working in `sourceplane/multi-tenant-saas-2`, a multi-tenant SaaS on
+You are working in `sourceplane/payload-lms`, a multi-tenant SaaS on
 Cloudflare Workers and Supabase Postgres. It is an Orun desired-state repo:
 every directory with a `component.yaml` is a component, and merging to `main`
 is what deploys it.
@@ -88,7 +88,9 @@ branded-fork need `orun` ≥ v2.88.0 on `PATH`; branded-fork needs `pnpm`).
 - `execution.state` in `intent.yaml` (`workspace`, `backendUrl`,
   `requireOrg`): CI's credential-free sign-in depends on it.
 - `.rebrand/values.json` — this product's identity record; the docs refresh
-  reads it, and the rebrand reads it as the baseline's own names.
+  reads it, and the rebrand reads it as the baseline's own names. It still
+  says `multi-tenant-saas-2`, the repository's name until 2026-10-30, and so
+  does everything deployed (README → Names): leave both.
 - `ai/context/deployment.md`, and the README between the `08-docs` markers:
   both are regenerated, and hand edits are overwritten.
 - `.github/workflows/ci.yml` beyond its version pins. CI runs `orun plan` and

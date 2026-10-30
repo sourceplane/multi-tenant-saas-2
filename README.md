@@ -1,6 +1,6 @@
-# Multi Tenant Saas 2
+# Payload LMS
 
-`sourceplane/multi-tenant-saas-2` — a multi-tenant SaaS on Cloudflare Workers
+`sourceplane/payload-lms` — a multi-tenant SaaS on Cloudflare Workers
 and Supabase Postgres, run as an [Orun](https://github.com/sourceplane/orun)
 component-native desired-state repo. Identity, organizations, projects, RBAC,
 audit, metering, billing, webhooks and notifications are separate
@@ -8,6 +8,17 @@ bounded-context Workers behind one public edge API. The product is a learning
 platform on Payload CMS: academies publish courses at its root, and its admin
 is the staff console, where a Lumen account signs in and the account,
 organization, notifications and billing pages live.
+
+## Names
+
+The repository is `sourceplane/payload-lms`. It was
+`sourceplane/multi-tenant-saas-2` until 2026-10-30, and GitHub redirects the
+old URLs. What is deployed keeps the original name, deliberately: the Workers
+(`multi-tenant-saas-2-*`), the Orun project and its secrets
+(`secret://…/multi-tenant-saas-2/…`), and the identity record
+[`.rebrand/values.json`](.rebrand/values.json), which the rebrand reads as the
+words a product replaces. Renaming any of those replaces a live resource, which
+is a migration, not a rename.
 
 ## Live deployment
 
