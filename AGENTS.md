@@ -26,6 +26,26 @@ is what deploys it.
 6. `apps/web-console-next/docs/` — the old console URL, now a redirect
    Worker into the CMS.
 
+## This repository is also a baseline
+
+Products are built from it by `repo-blueprint.yaml` ([BOOTSTRAP.md](BOOTSTRAP.md)).
+The factory — `blueprint.yaml`, `repo-blueprint.yaml`, `.baseline/product/`,
+`tooling/rebrand/`, `tooling/bootstrap/`, `hooks/`, `testing/`,
+`docs/phases/`, `tasks/0*.TaskContract.yaml`, `.github/workflows/baseline.yml`
+and `tag.yml` — never ships to a product. Two consequences for any change:
+
+- **A new component needs a module and a phase** in `repo-blueprint.yaml`,
+  or no product gets it: `testing/coverage.test.sh` fails until it has one.
+- **Code that names the platform is renamed in every product.** The rebrand
+  turns `lumen` in any case-form — `lumenUserId`, `lumen_user_id`, `LUMEN_API`,
+  `LumenLogin`, `lib/lumen/`, "Lumen account" — into the product's name, paths
+  included. Keep a bare `lumen` out of identifier positions (a variable named
+  `lumen` becomes a slug, which is not an identifier); `testing/branded-fork.test.sh`
+  places a product and runs its typecheck and suites, and catches it.
+
+Run the gates with `bash testing/<name>.test.sh` (leak, placement and
+branded-fork need `orun` ≥ v2.88.0 on `PATH`; branded-fork needs `pnpm`).
+
 ## Layout
 
 - `apps/api-edge` is public; the twelve `apps/*-worker` are reached only
@@ -68,7 +88,7 @@ is what deploys it.
 - `execution.state` in `intent.yaml` (`workspace`, `backendUrl`,
   `requireOrg`): CI's credential-free sign-in depends on it.
 - `.rebrand/values.json` — this product's identity record; the docs refresh
-  reads it.
+  reads it, and the rebrand reads it as the baseline's own names.
 - `ai/context/deployment.md`, and the README between the `08-docs` markers:
   both are regenerated, and hand edits are overwritten.
 - `.github/workflows/ci.yml` beyond its version pins. CI runs `orun plan` and

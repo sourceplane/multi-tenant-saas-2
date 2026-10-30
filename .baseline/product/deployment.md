@@ -1,0 +1,8 @@
+# {{ .reponame }} — live deployment manifest
+
+> Not rendered yet. The bootstrap's `08-docs` phase probes every live URL —
+> the edge, the CMS that is the console, and the console URL that redirects
+> into it — and regenerates this file from what answered: the workspace, the
+> URLs and their status, and the secrets inventory by name. Until then,
+> nothing here claims the product is live. The operating contract is
+> [operations.md](operations.md).

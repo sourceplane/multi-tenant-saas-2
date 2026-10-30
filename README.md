@@ -25,6 +25,40 @@ Start at [AGENTS.md](AGENTS.md). It is written for a coding agent and is the
 shortest way in for a person too: what to read first, how a change lands, and
 what not to touch.
 
+## A baseline: products from this repository
+
+This repository is also the **Multi-tenant LMS baseline**: a learning platform
+is born from it — its own repository, Supabase projects, Workers and Payload
+CMS, with a sample academy, live on stage and prod — by one artifact,
+[`repo-blueprint.yaml`](repo-blueprint.yaml), run by `orun new`
+([BOOTSTRAP.md](BOOTSTRAP.md) → [docs/phases/](docs/phases/README.md)). Eight
+idempotent phases — scaffold, foundation, infrastructure, database, workers,
+edge, console, docs — each land a verified pull request, and each is
+selectable with `--phase <name>`. The console phase is this baseline's own: it
+lands the learning platform (academies, courses, lessons, quizzes and learners
+at its root, the staff console at `/admin`) and the console URL that redirects
+into the admin. What the owner does afterwards is open the staff admin with a
+setup token only they hold.
+
+A product receives **product-only content**, branded with its own name: the
+source, infrastructure and CI, its own README, AGENTS.md and operating guide.
+None of the factory below ships, and nothing in a product says `lumen`: the
+CMS names the platform `lumen` in its code (`lib/lumen/`, `lumenUserId`,
+`LUMEN_API`), and the rebrand renames every form of it — paths included — into
+the product's, so a Payload field and the column it maps to, a route and the
+URLs that reach it, still agree.
+
+| Path | What it is |
+|---|---|
+| `blueprint.yaml` | The card the console renders: overview, providers, inputs, the six brokered secrets, the programme |
+| `repo-blueprint.yaml` | The build: every module, the eight phases and their hooks |
+| `BOOTSTRAP.md`, `docs/phases/` | How to run it, phase by phase, and what each phase proves |
+| `.baseline/product/` | The product's README, AGENTS.md and deployment stub, rendered with its name |
+| `tooling/rebrand/` | The rename engine: this repository's own identity (`.rebrand/values.json`) into the product's |
+| `tooling/bootstrap/`, `hooks/` | The hooks' scripts: promotion and dev-lane deferral, redeploy markers, the deployment record |
+| `testing/` | The baseline's own gates, run by `.github/workflows/baseline.yml`: the card against the build, every component placed once, a product placed and branded offline, and that product installed, typechecked and tested |
+| `tasks/0*.TaskContract.yaml` | The contract each phase's task is opened with |
+
 ## What is here
 
 | Path | What it is |

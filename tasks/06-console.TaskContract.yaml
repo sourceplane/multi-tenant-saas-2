@@ -1,0 +1,19 @@
+# Task contract template for the 06-console landing (saas-baseline-tracking BT1).
+# Unbound to a key on purpose: `orun task create --contract` seals and
+# attaches it to the key the allocator issues. gates: [] is a DECLARATION —
+# merge alone finishes this task; the main convergence is the gate the flow
+# watches, not one the plane observes as a PR check.
+apiVersion: orun.io/v1
+kind: TaskContract
+spec:
+  goal: The Payload CMS is live on stage and prod as the product's console, and the console URL opens its admin
+  affects:
+    - cms
+    - web-console-next
+    # Not cms-tests: its suite runs inside the cms lane (the cms buildCommand).
+    # Not cloudflare-domain, though 06-console lands it: it ships parked
+    # (subscribe.environments: []), and a parked component deploys nothing.
+  doneWhen:
+    - the CMS answers /health on stage and prod, through its own Hyperdrive config
+    - the console URL answers 308 into the CMS admin on stage and prod
+  gates: []

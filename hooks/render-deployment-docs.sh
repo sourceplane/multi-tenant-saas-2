@@ -1,0 +1,214 @@
+#!/usr/bin/env bash
+# Render the product's LIVE-DEPLOYMENT documentation from verified state.
+# Called by phase 08-docs as a `run:` hook (and safe to run by hand).
+# Idempotent: the
+# generated files and the README section are fully re-rendered on every run,
+# so re-running after the custom domain is wired or any redeploy refreshes them.
+#
+#   hooks/render-deployment-docs.sh <out> <workspace> <baseline-dir>
+#
+# What it writes (in <out>):
+#   ai/context/deployment.md   — REGENERATED: the deployment manifest (URLs
+#                                with live probe results, identity, secrets
+#                                inventory BY NAME, integrations, provenance)
+#   ai/context/operations.md   — healed from the baseline template if absent
+#                                (static operator/agent guide; never rewritten)
+#   README.md                  — the section between <!-- 08-docs:begin/end -->
+#                                markers is replaced (markers appended if the
+#                                README predates them)
+#
+# No secret VALUE is ever read or written here — inventories are names only.
+set -euo pipefail
+
+out="${1:?usage: render-deployment-docs.sh <out> <workspace> <baseline-dir>}"
+ws="${2:?usage: render-deployment-docs.sh <out> <workspace> <baseline-dir>}"
+L="${3:?usage: render-deployment-docs.sh <out> <workspace> <baseline-dir>}"
+
+cd "$out"
+vals=".rebrand/values.json"
+[ -f "$vals" ] || { echo "render-docs: $vals missing — is this a scaffolded product?" >&2; exit 1; }
+
+repo="$(python3 -c "import json;print(json.load(open('$vals'))['reponame'])")"
+sub="$(python3 -c "import json;print(json.load(open('$vals'))['subdomain'])")"
+domain="$(python3 -c "import json;print(json.load(open('$vals')).get('productdomain',''))")"
+# A product is built with no domain (the console asks for none): values.json
+# records "" and the tree carries the reserved placeholder <reponame>.example.com
+# until an owner sets one. Neither is a domain to probe.
+case "$domain" in *.example.com) domain="" ;; esac
+
+# Workspace slug via the direct backend read (works for user sessions AND
+# workspace-scoped ORUN_TOKENs); tolerate failure — slug then shows as "?".
+slug="$( { orun workspace "$ws" 2>/dev/null || true; } | sed -n 's/^ *slug: *//p' | head -1)"
+[ -n "$slug" ] || slug="?"
+
+# CI lane pin (what version the deploy lanes run).
+lanepin="$(sed -n 's/^ *version: *\(v[0-9.]*\) *$/\1/p' .github/workflows/ci.yml 2>/dev/null | head -1)"
+[ -n "$lanepin" ] || lanepin="?"
+
+# curl emits the -w format even on connection failure (000) — capture, don't
+# append, or a failed probe reads "000000".
+probe() { local c; c="$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 "$1" 2>/dev/null)" || true; printf '%s' "${c:-000}"; }
+badge() { case "$1" in 2*|3*|401|403) echo "LIVE ($1)" ;; 000) echo "unreachable" ;; *) echo "answering $1" ;; esac; }
+
+edge_stage="https://${repo}-api-edge-stage.${sub}.workers.dev"
+edge_prod="https://${repo}-api-edge-prod.${sub}.workers.dev"
+con_stage="https://${repo}-web-console-next-stage.${sub}.workers.dev"
+con_prod="https://${repo}-web-console-next-prod.${sub}.workers.dev"
+cms_stage="https://${repo}-cms-stage.${sub}.workers.dev"
+cms_prod="https://${repo}-cms-prod.${sub}.workers.dev"
+
+p_es="$(probe "$edge_stage/health")"; p_ep="$(probe "$edge_prod/health")"
+p_cs="$(probe "$con_stage")";        p_cp="$(probe "$con_prod")"
+p_ms="$(probe "$cms_stage/health")"; p_mp="$(probe "$cms_prod/health")"
+# The console URL is a redirect into the CMS: 308 is what it is for, and a 200
+# would mean something else answered there.
+redirect() { case "$1" in 308) echo "redirects to the CMS (308)" ;; 000) echo "unreachable" ;; *) echo "answering $1, not the 308 into the CMS" ;; esac; }
+
+# Custom domain (set later, by an owner): probe only if a domain is recorded;
+# an unreachable domain is reported as pending, never a failure.
+dom_rows=""
+if [ -n "$domain" ]; then
+  p_da="$(probe "https://api.${domain}/health")"
+  p_dc="$(probe "https://app.${domain}")"
+  dom_rows="| edge (custom domain) | https://api.${domain}/health | $( [ "$p_da" = 000 ] && echo 'pending (not wired yet, or DNS propagating)' || badge "$p_da" ) |
+| console (custom domain) | https://app.${domain} | $( [ "$p_dc" = 000 ] && echo 'pending (not wired yet, or DNS propagating)' || badge "$p_dc" ) |"
+fi
+
+# Inventories — NAMES/status only, never values. Tolerant: a token that
+# cannot list simply yields an "unavailable" note instead of failing docs.
+secrets_proj="$( { orun secrets list --org "$ws" --project 2>/dev/null || true; } | awk 'NR>1 && NF {print "  - "$1}' )"
+secrets_stage="$( { orun secrets list --org "$ws" --env stage 2>/dev/null || true; } | awk 'NR>1 && NF {print "  - "$1}' )"
+secrets_prod="$( { orun secrets list --org "$ws" --env prod 2>/dev/null || true; } | awk 'NR>1 && NF {print "  - "$1}' )"
+[ -n "$secrets_proj" ]  || secrets_proj="  - (listing unavailable to this credential)"
+[ -n "$secrets_stage" ] || secrets_stage="  - (listing unavailable to this credential)"
+[ -n "$secrets_prod" ]  || secrets_prod="  - (listing unavailable to this credential)"
+integrations="$( { orun integrations list --org "$ws" --json 2>/dev/null || true; } | python3 -c "
+import json,sys
+try: rows=json.load(sys.stdin)
+except Exception: rows=[]
+out=[f\"  - {r.get('provider','?')}: {r.get('status','?')}\" for r in rows]
+print('\n'.join(out) if out else '  - (listing unavailable to this credential)')" )"
+
+now="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+
+# Heal the static operator guide from the baseline when the product predates it.
+mkdir -p ai/context
+if [ ! -f ai/context/operations.md ] && [ -f "$L/ai/context/operations.md" ]; then
+  cp "$L/ai/context/operations.md" ai/context/operations.md
+  # The template speaks the source repo's name; the product copy must
+  # speak the product's, so reuse the rebrand values. (It carried an
+  # `OPSFLOWS` placeholder that only this heal filled in — the copy every
+  # product got at 01-scaffold kept the literal `https://github.com/OPSFLOWS`.
+  # The line names the baseline as `<baseline-git-url>` now, which needs no
+  # filling: a literal baseline name would itself be rebranded into the
+  # product's.)
+  node "$L/tooling/rebrand/rebrand.mjs" --values "$vals" --allow-dirty >/dev/null 2>&1 || true
+  echo "render-docs: healed ai/context/operations.md"
+fi
+
+cat > ai/context/deployment.md <<EOF
+# ${repo} — live deployment manifest
+
+> GENERATED by the docs flow on ${now}; re-run it to refresh (idempotent;
+> command in [operations.md](operations.md)). Hand-edits here are
+> overwritten. No secret values appear in this file — inventories are
+> names only.
+
+## Identity
+
+| | |
+|---|---|
+| product / project slug | \`${repo}\` |
+| Orun workspace | \`${ws}\` (slug \`${slug}\`) |
+| declared in | \`intent.yaml\` → \`execution.state.workspace\` / \`.project\` |
+| CI lane CLI pin | orun \`${lanepin}\` (\`.github/workflows/ci.yml\`) |
+
+## Public URLs (probed ${now})
+
+| surface | URL | status |
+|---|---|---|
+| edge API (stage) | ${edge_stage}/health | $(badge "$p_es") |
+| edge API (prod) | ${edge_prod}/health | $(badge "$p_ep") |
+| CMS — the console (stage) | ${cms_stage}/health | $(badge "$p_ms") |
+| CMS — the console (prod) | ${cms_prod}/health | $(badge "$p_mp") |
+| console URL (stage) | ${con_stage} | $(redirect "$p_cs") |
+| console URL (prod) | ${con_prod} | $(redirect "$p_cp") |
+${dom_rows}
+
+A 401/403 on \`/health\` still counts as deployed (alive but unauthorized);
+000/5xx does not. The CMS's \`/health\` is a round trip through its own
+Hyperdrive config to schema \`cms\`, so LIVE there means it can serve. The \`dev\` environment is verify-only by design — no
+deployed URLs.
+
+## Environments
+
+- \`stage\` and \`prod\` are fully provisioned (Supabase project, Hyperdrive
+  for the fleet and for the CMS, idempotency KV, the CMS media bucket,
+  migrations) and serve the URLs above.
+- The CMS admin opens to its first admin only with the owner's setup token
+  (\`apps/cms/docs/runbook.md\`, "Open the admin").
+- \`dev\` is verify-only: plan/verify lanes run, nothing is deployed.
+
+## Secrets inventory (names only)
+
+Project rung:
+${secrets_proj}
+
+Environment \`stage\`:
+${secrets_stage}
+
+Environment \`prod\`:
+${secrets_prod}
+
+Provider secrets are BROKERED (minted per-run from the workspace's
+integration connections; no long-lived values at rest). \`WIRING_*\` and
+\`SUPABASE_*\` env-rung entries are job-output secrets published by the
+infrastructure terraform — deploy lanes resolve them for worker bindings.
+
+## Workspace integrations
+
+${integrations}
+
+## How this deployment changes
+
+Merges to \`main\` converge automatically: CI plans changed components and
+runs each lane via \`orun run --remote-state\` against the workspace above.
+See [operations.md](operations.md) for the full operating contract
+(convergence, resumes, secrets, verification, troubleshooting).
+EOF
+echo "render-docs: wrote ai/context/deployment.md"
+
+# README section between markers (append the section if the README predates it).
+python3 - "$repo" <<'PY'
+import re, sys
+repo = sys.argv[1]
+begin, end = "<!-- 08-docs:begin -->", "<!-- 08-docs:end -->"
+body = f"""{begin}
+This product is **live**. Verified URLs, identity, and the secrets
+inventory are recorded in
+[ai/context/deployment.md](ai/context/deployment.md) (regenerated by the
+docs flow — command in the operating contract); how it deploys and how to
+operate it: [ai/context/operations.md](ai/context/operations.md).
+{end}"""
+s = open("README.md").read()
+if begin in s and end in s:
+    s = re.sub(re.escape(begin) + r".*?" + re.escape(end), body, s, count=1, flags=re.S)
+else:
+    # READMEs that predate the markers get the section right after the title.
+    lines = s.splitlines(keepends=True)
+    insert_at = 1
+    while insert_at < len(lines) and lines[insert_at].strip() == "":
+        insert_at += 1
+    section = f"\n## Live deployment\n\n{body}\n"
+    lines.insert(insert_at, section)
+    s = "".join(lines)
+open("README.md", "w").write(s)
+print("render-docs: README live-deployment section rendered")
+PY
+
+# The contract for verify: no placeholder tokens survive a render.
+if grep -rn "TBD_08DOCS" ai/context README.md 2>/dev/null | grep -v Binary; then
+  echo "render-docs: placeholder tokens remain (above)" >&2
+  exit 1
+fi
+echo "render-docs: done"

@@ -1,0 +1,33 @@
+apiVersion: orun.io/v1
+kind: TaskContract
+metadata:
+  name: LMB-1
+  title: "multi-tenant-saas-2 as a Lumen-grade baseline: the template layer"
+spec:
+  goal: "multi-tenant-saas-2 is a Blueprint of itself: repo-blueprint.yaml places a branded learning platform on Payload CMS, blueprint.yaml is its card, and the baseline's own CI proves a placed, branded product installs, typechecks and passes every suite."
+  affects:
+    - "repo-blueprint.yaml"
+    - "blueprint.yaml"
+    - "tooling/rebrand/**"
+    - "tooling/bootstrap/**"
+    - "hooks/**"
+    - "testing/**"
+    - ".baseline/product/**"
+    - ".github/workflows/baseline.yml"
+    - ".github/workflows/tag.yml"
+    - "BOOTSTRAP.md"
+    - "docs/phases/**"
+    - "docs/components/REVIEW.md"
+    - "tasks/0*.TaskContract.yaml"
+    - "tests/fixtures/acme.json"
+    - "apps/cms/component.yaml"
+    - "tests/cms/src/lumen-accounts.test.ts"
+    - "tests/platform-limits/src/service-chain.test.ts"
+    - "README.md"
+    - "AGENTS.md"
+    - "specs/epics/multi-tenant-saas-2-baseline/**"
+    - "tasks/LMB-1.TaskContract.yaml"
+  doneWhen:
+    - "Baseline CI (baseline-contract, blueprint-parses, branded-fork) is green on the pull request"
+    - "the product's own CI is green on the pull request and on main after the merge"
+  gates: []
