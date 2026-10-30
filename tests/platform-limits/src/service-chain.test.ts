@@ -34,8 +34,14 @@ const MAX_WORKER_INVOCATIONS = 32;
  */
 const CHAIN_BUDGET = 12;
 
-/** Measured today. Named so growth is a visible edit, not a silent drift. */
-const DEEPEST = { entry: "api-edge", depth: 8 };
+/**
+ * Measured today. Named so growth is a visible edit, not a silent drift.
+ *
+ * The CMS, since its staff sign-in (multi-tenant-saas-2-console LX1): it
+ * checks a session with api-edge over one service binding, so its deepest
+ * chain is the edge's own (8, unchanged) plus that hop.
+ */
+const DEEPEST = { entry: "cms", depth: 9 };
 
 /**
  * Cycles in the binding graph, reviewed and accepted.

@@ -1,0 +1,211 @@
+# The Multi-tenant LMS card: the CONTRACT the platform's bootstrap door reads
+# and the console renders, screen for screen (epic saas-bootstrap-console, BC3).
+#
+# Everything the console shows about this baseline comes from this file. Adding
+# a provider to `requires` grows a row in the Providers step; adding a key to
+# `secrets` grows a row in the Secrets step. Neither needs a console change.
+#
+# The registry (orun-cloud `infra/baselines-registry/baselines.yaml`) owns
+# identity and commerce — id, visibility, tier, the pinned tag. This file owns
+# the build contract. (The registry owned two more paths, the brief and the
+# umbrella, until the flows layer they named was deleted. This baseline is
+# blueprint-driven: `spec.bootstrap` declares neither, and the registry row
+# that fetches this file declares neither either.) NEITHER RESTATES THE
+# OTHER, which is why there is no `tag` here: this file is fetched *at* the tag
+# the registry pins, so a tag here could only rot — as it did, reading
+# `baseline-v17` against a live `baseline-v27`, ten releases adrift.
+apiVersion: orun.io/v1
+kind: Blueprint
+metadata:
+  name: multi-tenant-saas-2
+  displayName: Multi-tenant LMS
+  description: >
+    Cloudflare + Supabase multi-tenant learning platform on Payload CMS:
+    academies, courses, lessons and quizzes, learners with their own accounts,
+    progress and certificates, and a staff admin as the console — over 12
+    bounded-context Workers behind one edge API, with media on R2, terraform
+    data plane, migrations, CI that converges on merge. Live on stage+prod in
+    about 23 minutes (derived, not timed end to end).
+  tags: [saas, lms, cms, cloudflare, supabase, payload, nextjs]
+spec:
+  source:
+    repo: sourceplane/multi-tenant-saas-2
+    # No `tag`. See the header: the registry pins it, this file is fetched at it.
+  # ── What the operator reads first (the flow's step 1) ───────────────────
+  overview:
+    lede: >
+      A learning platform for many academies: courses, lessons and quizzes
+      on Payload CMS on Cloudflare Workers, learners with their own accounts
+      and certificates, and the admin as the staff console — over the same
+      twelve-Worker fleet and Supabase Postgres.
+    architecture:
+      - layer: Learning platform
+        items: [Payload CMS (academy, learner app, admin), console URL → admin]
+      - layer: Edge
+        items: [api-edge]
+      - layer: Services
+        items: ["12 bounded-context Workers"]
+      - layer: Data
+        items: [Supabase Postgres, Hyperdrive (fleet + CMS), KV, R2 media]
+      - layer: Delivery
+        items: [Terraform, GitHub Actions, db-migrate]
+    outcome:
+      - Live on stage and prod, with a sample academy to start from
+      - Academies, courses, lessons, quizzes, enrolments, progress and certificates
+      - A staff admin as the console, with account, organization and billing pages
+      - Media on R2, schema `cms` applied by migrations on merge
+
+  requires:
+    # GitHub arrives as the App installation plus the repo link; Cloudflare
+    # and Supabase are the two provider connections phase 03 asks for.
+    integrations: [github, cloudflare, supabase]
+    apiKeyRole: admin          # secret writes need the admin floor
+
+  inputs:
+    # Every input is collected by the console (inputs v3). `askedBy` is gone:
+    # it divided inputs into ones a form collects and ones an agent asked for
+    # in the session, and there is no agent in the build path any more.
+    #
+    # The cost lands here. An `askedBy: agent` input was exempt from `pattern`,
+    # because prose asked for it and prose does not validate. Every input now
+    # carries the rule its value is checked against before Continue.
+    #
+    # THE DOMAIN IS NOT ASKED. The product goes live on workers.dev, and a
+    # domain is an owner's step after the bootstrap: `productdomain` defaults
+    # to empty in repo-blueprint.yaml, and the rebrand writes the reserved
+    # placeholder `<reponame>.example.com` wherever the domain goes (intent's
+    # BASE_DOMAIN and CONSOLE_CUSTOM_DOMAIN, the edge and identity origins, the
+    # mail sender, the billing return URLs) for the product's
+    # ai/context/operations.md, "Setting the domain later", to replace. Nothing
+    # that needs a domain is removed — it waits for one. `apibaseurl` went with
+    # it: it was derived from `{productdomain}`, and a card can only derive
+    # from inputs it declares. With no domain, the CLI's default API is the
+    # product's own prod edge on workers.dev (rebrand.mjs).
+    - key: reponame
+      label: Repo name
+      pattern: "^[a-z][a-z0-9-]{1,38}$"
+      # The console already has this: the operator picked the repository. Say
+      # so rather than making the flow ask for the name printed above the
+      # field — and say it HERE, because the only alternative was for the
+      # console to special-case this key by name, which would make the console
+      # the authority on what a baseline's own input means.
+      from: repo.name
+    - key: productname
+      label: Product display name
+      pattern: "^[A-Za-z0-9][A-Za-z0-9 .,'&-]{1,48}$"
+      help: The name people will see — in the console header, the emails, the docs.
+      example: Acme Cloud
+    - key: githuborg
+      label: GitHub organisation
+      pattern: "^[A-Za-z0-9][A-Za-z0-9-]*$"
+      help: The GitHub org or user the product repository is created under.
+      # DERIVED FROM THE CHOSEN REPOSITORY, not asked. The operator picks the
+      # product repo in step 1, and its owner IS this value — a form field for
+      # it would be a second chance to get it wrong. `repo-blueprint.yaml`
+      # requires it, so a card that did not declare it would hand a build
+      # every field it showed and still die on `input "githuborg" is required`.
+      from: repo.owner
+    - key: subdomain
+      label: workers.dev subdomain
+      pattern: "^[a-z0-9][a-z0-9-]{0,62}$"
+      help: The workers.dev subdomain on the Cloudflare account this builds into.
+      example: acme
+      # READ FROM THE CLOUDFLARE CONNECTION, not asked. The subdomain belongs
+      # to the account the same way its id does, and there is exactly one
+      # right answer — a typed one could only be wrong, and wrong showed up
+      # after deploy, in CORS, OAuth origins, smoke checks and the verify URLs
+      # below. The integration reads it from Cloudflare at connect and on its
+      # hourly health check; the bootstrap door fills this input from the
+      # connection the build is BOUND to, the same one CLOUDFLARE_ACCOUNT_ID
+      # and the deploy tokens mint from, so all three name one account.
+      #
+      # No orun action and no `probe:` is needed, because the platform already
+      # holds the fact. An account with no workers.dev subdomain refuses the
+      # build at the door, naming the fix, before anything is created.
+      from: connection.cloudflare.workersSubdomain
+
+  # ── PREVIEW ONLY. `repo-blueprint.yaml`'s `integrations/reconcile` hooks
+  # mint these, brokered, during phase 03. ────────────────────────────────
+  # Transcribed from those hooks' own `keys:` and `template:` values, so
+  # `testing/manifest.test.sh` compares this list to the document that mints
+  # them rather than to a copy of itself — it used to compare against a shell
+  # script's `create` calls, and that script is gone with `flows/`.
+  # The console renders them read-only: they are minted from the workspace's
+  # connections at build time, so no credential is ever typed, shown or stored
+  # in the console. Keys that already exist are kept.
+  secrets:
+    - key: CLOUDFLARE_API_TOKEN
+      provider: cloudflare
+      template: workers-deploy
+      why: Workers + KV deploys
+    - key: CLOUDFLARE_HYPERDRIVE_TOKEN
+      provider: cloudflare
+      template: hyperdrive-edit
+      why: Hyperdrive — the deploy token deliberately cannot touch it
+    - key: CLOUDFLARE_R2_TOKEN
+      provider: cloudflare
+      template: r2-data
+      why: The CMS media bucket — the deploy token cannot create or read one
+    - key: CLOUDFLARE_ACCOUNT_ID
+      provider: cloudflare
+      template: account-id
+      why: Connection fact, not a secret
+      fact: true
+    - key: SUPABASE_ACCESS_TOKEN
+      provider: supabase
+      template: management-access
+      why: Project create and migrations
+    - key: SUPABASE_ORG_ID
+      provider: supabase
+      template: org-id
+      why: Connection fact, not a secret
+      fact: true
+
+  # ── PREVIEW ONLY. Each phase's `orun.task/ensure@v1` hook opens
+  # these. Idempotent by identity — epic by slug, milestone by name-within-epic
+  # — so a re-run finds what it made before. The console renders the programme
+  # so an operator can see the shape of the work before pressing Build.
+  # Eight phases, seven milestones: `03-infrastructure-database` is a second
+  # landing of 03 and files under it.
+  programme:
+    epicSlug: infra-baselining         # = repo-blueprint.yaml's `epicSlug` default
+    epicName: "Infra baselining — {productname}"
+    milestones:
+      - name: 01-scaffold
+      - name: 02-foundation
+      - name: 03-infrastructure
+      - name: 04-workers
+      - name: 05-edge
+      # The custom-domain component lands in 06-console, parked (it
+      # subscribes to no environment until an owner wires a zone), so the
+      # optional 07-domain milestone and the `domain` input that switched it
+      # on are gone. The numbering keeps its gaps so 08 keeps its name.
+      - name: 06-console
+      - name: 08-docs
+
+  bootstrap:
+    # THE BUILD DOCUMENT: the file whose phases a runner places. This baseline
+    # has no umbrella and no agent brief — the flows layer they named is gone
+    # — so this is the only entry point, and without it a runner that fetched
+    # this repo at its pinned tag would have nothing to run. `manifestPath` in
+    # the registry row names THIS file, the console card; it is not the build.
+    blueprint: repo-blueprint.yaml
+    # The sum of the phases' own `expectedMinutes` in repo-blueprint.yaml;
+    # `testing/manifest.test.sh` holds the two equal.
+    #
+    # DERIVED, NOT TIMED END TO END. No bootstrap of this baseline has been
+    # run as a whole yet. Phases 01–05 and 08 are the Lumen baseline's, file
+    # for file, and carry that run's measured minutes (18 in all, 2026-10-26).
+    # 06-console is the one this baseline changes — it builds Payload instead
+    # of fetching a prebuilt console — and its 7 is this repository's own
+    # main-branch convergences that built and deployed the CMS to stage and
+    # prod: 4m54s to 8m27s over eight runs, 6m48s at the median. The CMS's Hyperdrive config and
+    # bucket apply in lanes beside 03's and 03-db's (1.5 to 2.4 minutes on
+    # their own), so they add no time. docs/phases/TIMINGS.md has the runs.
+    expectedMinutes: 23
+    tokenChannel: ORUN_TOKEN_FILE   # how a runner hands over its refreshed token
+  verify:
+    urls:
+      - "https://{reponame}-api-edge-{env}.{subdomain}.workers.dev/health"
+      - "https://{reponame}-cms-{env}.{subdomain}.workers.dev/health"
+    envs: [stage, prod]
