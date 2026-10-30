@@ -18,14 +18,14 @@ which:
 
   | run | what it deployed | merge → green |
   |---|---|---|
-  | [40629953162](https://github.com/sourceplane/multi-tenant-saas-2/actions/runs/40629953162) | the CMS's first deploy (LMS1) | 6m32s |
-  | [40631366575](https://github.com/sourceplane/multi-tenant-saas-2/actions/runs/40631366575) | the course model and its migrations (LMS2) | 7m07s |
-  | [40634326811](https://github.com/sourceplane/multi-tenant-saas-2/actions/runs/40634326811) | learner records, migration 310 first (LMS3) | 8m27s |
-  | [40635166443](https://github.com/sourceplane/multi-tenant-saas-2/actions/runs/40635166443) | the learner app (LMS4) | 4m54s |
-  | [40775882041](https://github.com/sourceplane/multi-tenant-saas-2/actions/runs/40775882041) | staff sign-in, api-edge, identity, migration 320 (LX1) | 7m24s |
-  | [40777841965](https://github.com/sourceplane/multi-tenant-saas-2/actions/runs/40777841965) | the account and billing pages (LX2) | 6m41s |
-  | [40820374587](https://github.com/sourceplane/multi-tenant-saas-2/actions/runs/40820374587) | the CMS alone (a docs change under apps/cms) | 5m22s |
-  | [40852629180](https://github.com/sourceplane/multi-tenant-saas-2/actions/runs/40852629180) | media on R2, migration 330 first (LMS6) | 6m56s |
+  | [40629953162](https://github.com/sourceplane/payload-lms/actions/runs/40629953162) | the CMS's first deploy (LMS1) | 6m32s |
+  | [40631366575](https://github.com/sourceplane/payload-lms/actions/runs/40631366575) | the course model and its migrations (LMS2) | 7m07s |
+  | [40634326811](https://github.com/sourceplane/payload-lms/actions/runs/40634326811) | learner records, migration 310 first (LMS3) | 8m27s |
+  | [40635166443](https://github.com/sourceplane/payload-lms/actions/runs/40635166443) | the learner app (LMS4) | 4m54s |
+  | [40775882041](https://github.com/sourceplane/payload-lms/actions/runs/40775882041) | staff sign-in, api-edge, identity, migration 320 (LX1) | 7m24s |
+  | [40777841965](https://github.com/sourceplane/payload-lms/actions/runs/40777841965) | the account and billing pages (LX2) | 6m41s |
+  | [40820374587](https://github.com/sourceplane/payload-lms/actions/runs/40820374587) | the CMS alone (a docs change under apps/cms) | 5m22s |
+  | [40852629180](https://github.com/sourceplane/payload-lms/actions/runs/40852629180) | media on R2, migration 330 first (LMS6) | 6m56s |
 
   6m48s at the median, rounded up to 7 since a bootstrap's landing and probes
   come on top; the slowest, 8m27s, applied a migration before the CMS could
@@ -34,7 +34,7 @@ which:
   `cloudflare-hyperdrive-cms` apply in lanes beside `03-infrastructure`'s and
   `03-infrastructure-database`'s, and a convergence takes its longest lane,
   not the sum. The bucket alone took 2m10s
-  ([40851561770](https://github.com/sourceplane/multi-tenant-saas-2/actions/runs/40851561770)),
+  ([40851561770](https://github.com/sourceplane/payload-lms/actions/runs/40851561770)),
   against the 2m5s Lumen measured for all of 03 — so 03 may round to 3 on a
   slow day; the declared 2 is kept until a real run says otherwise.
 

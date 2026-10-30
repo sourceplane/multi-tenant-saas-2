@@ -240,8 +240,8 @@ baseline at a tag and run the same commands, with `ORUN_TOKEN` +
 
 ```bash
 export ORUN_TOKEN="$(orun auth token | tail -1)" GITHUB_TOKEN=…
-git clone --depth 1 --branch <baseline-tag> https://github.com/sourceplane/multi-tenant-saas-2
-cd multi-tenant-saas-2
+git clone --depth 1 --branch <baseline-tag> https://github.com/sourceplane/payload-lms
+cd payload-lms
 orun new --blueprint repo-blueprint.yaml --out /work/acme \
   --run-hooks --phase 03-infrastructure --values /work/acme.values.yaml
 orun new --blueprint repo-blueprint.yaml --out /work/acme \
